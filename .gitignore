@@ -6,6 +6,9 @@
 # dotenv files
 .env
 
+# Notas e guias locais de implementação (não versionados)
+docs/
+
 # User-specific files
 *.rsuser
 *.suo
