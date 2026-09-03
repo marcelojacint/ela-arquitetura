@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ElaArquitetura.Api/ElaArquitetura.Api.csproj" />
+    <Project Path="src/ElaArquitetura.Application/ElaArquitetura.Application.csproj" />
+    <Project Path="src/ElaArquitetura.Domain/ElaArquitetura.Domain.csproj" />
+    <Project Path="src/ElaArquitetura.Infrastructure/ElaArquitetura.Infrastructure.csproj" />
+  </Folder>
+</Solution>
