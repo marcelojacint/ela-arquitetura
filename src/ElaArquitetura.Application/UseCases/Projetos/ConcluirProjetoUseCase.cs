@@ -43,6 +43,6 @@ public sealed class ConcluirProjetoUseCase
 
         await _projetoRepository.AtualizarAsync(projeto, cancellationToken);
 
-        return UseCaseResult<ProjetoOutput>.Ok(new ProjetoOutput(projeto.Id, projeto.ClienteId, projeto.Titulo, projeto.Status, projeto.EtapaAtualId));
+        return UseCaseResult<ProjetoOutput>.Ok(ProjetoOutput.DeProjeto(projeto));
     }
 }
