@@ -9,11 +9,16 @@ public sealed record ReabrirProjetoInput(Guid ProjetoId);
 public sealed class ReabrirProjetoUseCase
 {
     private readonly IProjetoRepository _projetoRepository;
+    private readonly IEtapaRepository _etapaRepository;
     private readonly ILogger<ReabrirProjetoUseCase> _logger;
 
-    public ReabrirProjetoUseCase(IProjetoRepository projetoRepository, ILogger<ReabrirProjetoUseCase> logger)
+    public ReabrirProjetoUseCase(
+        IProjetoRepository projetoRepository,
+        IEtapaRepository etapaRepository,
+        ILogger<ReabrirProjetoUseCase> logger)
     {
         _projetoRepository = projetoRepository;
+        _etapaRepository = etapaRepository;
         _logger = logger;
     }
 
@@ -28,6 +33,8 @@ public sealed class ReabrirProjetoUseCase
 
         _logger.LogInformation("Projeto {ProjetoId} voltou para o status {NovoStatus}", projeto.Id, projeto.Status);
 
-        return UseCaseResult<ProjetoOutput>.Ok(ProjetoOutput.DeProjeto(projeto));
+        var etapas = await _etapaRepository.ListarTodasAsync(cancellationToken);
+
+        return UseCaseResult<ProjetoOutput>.Ok(ProjetoOutput.DeProjeto(projeto, etapas));
     }
 }

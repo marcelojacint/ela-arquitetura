@@ -6,9 +6,6 @@ namespace ElaArquitetura.Application.UseCases.Projetos;
 
 public sealed record CriarProjetoInput(Guid ClienteId, string Titulo);
 
-/// <summary>
-/// Cria o projeto já na primeira etapa do fluxo fixo (RF03).
-/// </summary>
 public sealed class CriarProjetoUseCase
 {
     private readonly IProjetoRepository _projetoRepository;
@@ -39,6 +36,8 @@ public sealed class CriarProjetoUseCase
 
         await _projetoRepository.AdicionarAsync(projeto, cancellationToken);
 
-        return UseCaseResult<ProjetoOutput>.Ok(ProjetoOutput.DeProjeto(projeto));
+        var etapas = await _etapaRepository.ListarTodasAsync(cancellationToken);
+
+        return UseCaseResult<ProjetoOutput>.Ok(ProjetoOutput.DeProjeto(projeto, etapas));
     }
 }

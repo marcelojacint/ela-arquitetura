@@ -1,5 +1,6 @@
 using ElaArquitetura.Application.Common;
 using ElaArquitetura.Application.Interfaces.Repositories;
+using ElaArquitetura.Domain.Entities;
 using Microsoft.Extensions.Logging;
 
 namespace ElaArquitetura.Application.UseCases.Projetos;
@@ -45,6 +46,6 @@ public sealed class ConcluirProjetoUseCase
 
         _logger.LogInformation("Projeto {ProjetoId} mudou de status para {NovoStatus}", projeto.Id, projeto.Status);
 
-        return UseCaseResult<ProjetoOutput>.Ok(ProjetoOutput.DeProjeto(projeto));
+        return UseCaseResult<ProjetoOutput>.Ok(ProjetoOutput.DeProjeto(projeto, Array.Empty<Etapa>()));
     }
 }
