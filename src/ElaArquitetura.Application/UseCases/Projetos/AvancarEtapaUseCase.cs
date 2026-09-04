@@ -1,28 +1,28 @@
 using ElaArquitetura.Application.Common;
 using ElaArquitetura.Application.Interfaces.Repositories;
+using Microsoft.Extensions.Logging;
 
 namespace ElaArquitetura.Application.UseCases.Projetos;
 
 public sealed record AvancarEtapaInput(Guid ProjetoId);
 
-/// <summary>
-/// Confirma o avanço de etapa (RF06) — só efetiva quando o checklist obrigatório
-/// da etapa atual já está completo; quem decide chamar isso é o usuário, nunca é automático.
-/// </summary>
 public sealed class AvancarEtapaUseCase
 {
     private readonly IProjetoRepository _projetoRepository;
     private readonly IEtapaRepository _etapaRepository;
     private readonly IChecklistItemRepository _checklistItemRepository;
+    private readonly ILogger<AvancarEtapaUseCase> _logger;
 
     public AvancarEtapaUseCase(
         IProjetoRepository projetoRepository,
         IEtapaRepository etapaRepository,
-        IChecklistItemRepository checklistItemRepository)
+        IChecklistItemRepository checklistItemRepository,
+        ILogger<AvancarEtapaUseCase> logger)
     {
         _projetoRepository = projetoRepository;
         _etapaRepository = etapaRepository;
         _checklistItemRepository = checklistItemRepository;
+        _logger = logger;
     }
 
     public async Task<UseCaseResult<ProjetoOutput>> ExecutarAsync(AvancarEtapaInput input, CancellationToken cancellationToken)
@@ -46,6 +46,10 @@ public sealed class AvancarEtapaUseCase
             return UseCaseResult<ProjetoOutput>.Falha(projeto.Notifications.Select(n => n.Mensagem));
 
         await _projetoRepository.AtualizarAsync(projeto, cancellationToken);
+
+        _logger.LogInformation(
+            "Projeto {ProjetoId} avancou da etapa {EtapaAnteriorId} para {EtapaNovaId}",
+            projeto.Id, etapaAtual.Id, proximaEtapa.Id);
 
         return UseCaseResult<ProjetoOutput>.Ok(ProjetoOutput.DeProjeto(projeto));
     }
