@@ -5,4 +5,7 @@
     <Project Path="src/ElaArquitetura.Domain/ElaArquitetura.Domain.csproj" />
     <Project Path="src/ElaArquitetura.Infrastructure/ElaArquitetura.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ElaArquitetura.Domain.Tests/ElaArquitetura.Domain.Tests.csproj" />
+  </Folder>
 </Solution>
