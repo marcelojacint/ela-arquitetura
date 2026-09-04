@@ -40,6 +40,15 @@ public class ProjetoTests
     }
 
     [Fact]
+    public void PodeAvancarEtapa_deve_ser_falso_para_etapa_obrigatoria_com_checklist_vazio()
+    {
+        var etapaAtual = NovaEtapa("Anteprojeto", 3);
+        var projeto = Projeto.Criar(Guid.NewGuid(), "Casa Silva", etapaAtual);
+
+        Assert.False(projeto.PodeAvancarEtapa(etapaAtual, Array.Empty<ChecklistItem>()));
+    }
+
+    [Fact]
     public void AvancarEtapa_nao_deve_mudar_etapa_quando_checklist_esta_incompleto()
     {
         var etapaAtual = NovaEtapa("Anteprojeto", 3);

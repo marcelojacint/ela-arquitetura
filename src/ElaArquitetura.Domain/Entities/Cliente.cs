@@ -40,5 +40,21 @@ public class Cliente : Notifiable
         return cliente;
     }
 
+    public void Atualizar(string nome, string telefoneBruto, string? email, string? endereco)
+    {
+        if (string.IsNullOrWhiteSpace(nome))
+            AddNotification(nameof(Nome), "Nome do cliente é obrigatório.");
+        else
+            Nome = nome;
+
+        if (Telefone.TryCriar(telefoneBruto, out var telefone, out var erroTelefone))
+            Telefone = telefone;
+        else
+            AddNotification(nameof(Telefone), erroTelefone!);
+
+        Email = email;
+        Endereco = endereco;
+    }
+
     public void Desativar() => Ativo = false;
 }

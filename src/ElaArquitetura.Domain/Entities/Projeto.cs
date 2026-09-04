@@ -35,24 +35,16 @@ public class Projeto : Notifiable
         return projeto;
     }
 
-    /// <summary>
-    /// Etapas opcionais (ex.: Relatório de Obra) nunca bloqueiam o avanço,
-    /// mesmo com checklist incompleto ou vazio.
-    /// </summary>
     public bool PodeAvancarEtapa(Etapa etapaAtual, IEnumerable<ChecklistItem> checklistDaEtapaAtual)
     {
         if (etapaAtual.Opcional)
             return true;
 
-        return checklistDaEtapaAtual
-            .Where(item => item.EtapaId == etapaAtual.Id)
-            .All(item => item.Concluido);
+        var itensDaEtapa = checklistDaEtapaAtual.Where(item => item.EtapaId == etapaAtual.Id).ToList();
+
+        return itensDaEtapa.Count > 0 && itensDaEtapa.All(item => item.Concluido);
     }
 
-    /// <summary>
-    /// O avanço é sempre confirmado pelo usuário (gerente/proprietária) — este método
-    /// só executa a mudança quando as condições já foram satisfeitas, nunca dispara sozinho.
-    /// </summary>
     public void AvancarEtapa(Etapa etapaAtual, Etapa proximaEtapa, IEnumerable<ChecklistItem> checklistDaEtapaAtual)
     {
         if (!PodeAvancarEtapa(etapaAtual, checklistDaEtapaAtual))
@@ -86,5 +78,11 @@ public class Projeto : Notifiable
 
         Status = StatusProjeto.Concluido;
         DataConclusao = DateTime.UtcNow;
+    }
+
+    public void Reabrir()
+    {
+        Status = StatusProjeto.EmAndamento;
+        DataConclusao = null;
     }
 }
