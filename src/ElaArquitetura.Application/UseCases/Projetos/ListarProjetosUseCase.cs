@@ -5,16 +5,22 @@ namespace ElaArquitetura.Application.UseCases.Projetos;
 
 public sealed record ListarProjetosInput(StatusProjeto? Status, Guid? EtapaId);
 
-/// <summary>RF13 — listagem filtrável por status e/ou etapa.</summary>
 public sealed class ListarProjetosUseCase
 {
     private readonly IProjetoRepository _projetoRepository;
+    private readonly IEtapaRepository _etapaRepository;
 
-    public ListarProjetosUseCase(IProjetoRepository projetoRepository) => _projetoRepository = projetoRepository;
+    public ListarProjetosUseCase(IProjetoRepository projetoRepository, IEtapaRepository etapaRepository)
+    {
+        _projetoRepository = projetoRepository;
+        _etapaRepository = etapaRepository;
+    }
 
     public async Task<IReadOnlyCollection<ProjetoOutput>> ExecutarAsync(ListarProjetosInput input, CancellationToken cancellationToken)
     {
         var projetos = await _projetoRepository.ListarAsync(input.Status, input.EtapaId, cancellationToken);
-        return projetos.Select(ProjetoOutput.DeProjeto).ToList();
+        var etapas = await _etapaRepository.ListarTodasAsync(cancellationToken);
+
+        return projetos.Select(projeto => ProjetoOutput.DeProjeto(projeto, etapas)).ToList();
     }
 }

@@ -51,6 +51,8 @@ public sealed class AvancarEtapaUseCase
             "Projeto {ProjetoId} avancou da etapa {EtapaAnteriorId} para {EtapaNovaId}",
             projeto.Id, etapaAtual.Id, proximaEtapa.Id);
 
-        return UseCaseResult<ProjetoOutput>.Ok(ProjetoOutput.DeProjeto(projeto));
+        var etapas = await _etapaRepository.ListarTodasAsync(cancellationToken);
+
+        return UseCaseResult<ProjetoOutput>.Ok(ProjetoOutput.DeProjeto(projeto, etapas));
     }
 }

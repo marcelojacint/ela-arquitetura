@@ -6,6 +6,7 @@ using ElaArquitetura.Application.Interfaces.Repositories;
 using ElaArquitetura.Application.UseCases.Auth;
 using ElaArquitetura.Application.UseCases.Checklist;
 using ElaArquitetura.Application.UseCases.Clientes;
+using ElaArquitetura.Application.UseCases.Entregas;
 using ElaArquitetura.Application.UseCases.Funcionarios;
 using ElaArquitetura.Application.UseCases.Projetos;
 using ElaArquitetura.Infrastructure.Auth;
@@ -40,6 +41,7 @@ builder.Services.AddScoped<CriarClienteUseCase>();
 builder.Services.AddScoped<AtualizarClienteUseCase>();
 builder.Services.AddScoped<BuscarClientesUseCase>();
 builder.Services.AddScoped<ObterClientePorIdUseCase>();
+builder.Services.AddScoped<ObterWhatsAppLinkUseCase>();
 
 builder.Services.AddScoped<CriarFuncionarioUseCase>();
 builder.Services.AddScoped<ListarFuncionariosUseCase>();
@@ -57,6 +59,8 @@ builder.Services.AddScoped<ConcluirChecklistItemUseCase>();
 builder.Services.AddScoped<ReabrirChecklistItemUseCase>();
 builder.Services.AddScoped<ListarChecklistDaEtapaAtualUseCase>();
 builder.Services.AddScoped<CriarChecklistItemUseCase>();
+
+builder.Services.AddScoped<RegistrarEntregaUseCase>();
 
 var jwtSection = builder.Configuration.GetSection(JwtOptions.SectionName);
 

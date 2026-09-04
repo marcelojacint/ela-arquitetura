@@ -22,4 +22,7 @@ public class EtapaRepository : IEtapaRepository
             .Where(e => e.Ordem > etapaAtual.Ordem)
             .OrderBy(e => e.Ordem)
             .FirstOrDefaultAsync(cancellationToken);
+
+    public async Task<IReadOnlyCollection<Etapa>> ListarTodasAsync(CancellationToken cancellationToken)
+        => await _context.Etapas.OrderBy(e => e.Ordem).ToListAsync(cancellationToken);
 }
