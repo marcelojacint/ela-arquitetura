@@ -1,6 +1,11 @@
 @ElaArquitetura.Api_HostAddress = http://localhost:5164
 
-GET {{ElaArquitetura.Api_HostAddress}}/weatherforecast/
-Accept: application/json
+POST {{ElaArquitetura.Api_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@elaarquitetura.com.br",
+  "senha": "Trocar123!"
+}
 
 ###
