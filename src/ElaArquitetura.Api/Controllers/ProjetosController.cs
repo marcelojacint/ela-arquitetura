@@ -1,4 +1,5 @@
 using ElaArquitetura.Application.UseCases.Checklist;
+using ElaArquitetura.Application.UseCases.Entregas;
 using ElaArquitetura.Application.UseCases.Projetos;
 using ElaArquitetura.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
@@ -21,6 +22,7 @@ public class ProjetosController : ControllerBase
     private readonly RemoverFuncionarioDoProjetoUseCase _removerFuncionarioDoProjetoUseCase;
     private readonly ListarChecklistDaEtapaAtualUseCase _listarChecklistDaEtapaAtualUseCase;
     private readonly CriarChecklistItemUseCase _criarChecklistItemUseCase;
+    private readonly RegistrarEntregaUseCase _registrarEntregaUseCase;
 
     public ProjetosController(
         CriarProjetoUseCase criarProjetoUseCase,
@@ -32,7 +34,8 @@ public class ProjetosController : ControllerBase
         AtribuirFuncionarioAoProjetoUseCase atribuirFuncionarioAoProjetoUseCase,
         RemoverFuncionarioDoProjetoUseCase removerFuncionarioDoProjetoUseCase,
         ListarChecklistDaEtapaAtualUseCase listarChecklistDaEtapaAtualUseCase,
-        CriarChecklistItemUseCase criarChecklistItemUseCase)
+        CriarChecklistItemUseCase criarChecklistItemUseCase,
+        RegistrarEntregaUseCase registrarEntregaUseCase)
     {
         _criarProjetoUseCase = criarProjetoUseCase;
         _listarProjetosUseCase = listarProjetosUseCase;
@@ -44,12 +47,14 @@ public class ProjetosController : ControllerBase
         _removerFuncionarioDoProjetoUseCase = removerFuncionarioDoProjetoUseCase;
         _listarChecklistDaEtapaAtualUseCase = listarChecklistDaEtapaAtualUseCase;
         _criarChecklistItemUseCase = criarChecklistItemUseCase;
+        _registrarEntregaUseCase = registrarEntregaUseCase;
     }
 
     public sealed record CriarProjetoRequest(Guid ClienteId, string Titulo);
     public sealed record AlterarStatusRequest(StatusProjeto Status);
     public sealed record AtribuirFuncionarioRequest(Guid FuncionarioId, string? PapelNoProjeto);
     public sealed record CriarChecklistItemRequest(string Descricao, Guid? SubEtapaId);
+    public sealed record RegistrarEntregaRequest(string LinkDrive, bool NotificarWhatsApp);
 
     [HttpPost]
     public async Task<IActionResult> Criar(CriarProjetoRequest request, CancellationToken cancellationToken)
@@ -140,6 +145,18 @@ public class ProjetosController : ControllerBase
     {
         var resultado = await _criarChecklistItemUseCase.ExecutarAsync(
             new CriarChecklistItemInput(id, request.Descricao, request.SubEtapaId), cancellationToken);
+
+        if (!resultado.Sucesso)
+            return BadRequest(new { erros = resultado.Erros });
+
+        return Ok(resultado.Dados);
+    }
+
+    [HttpPost("{id:guid}/entrega")]
+    public async Task<IActionResult> RegistrarEntrega(Guid id, RegistrarEntregaRequest request, CancellationToken cancellationToken)
+    {
+        var resultado = await _registrarEntregaUseCase.ExecutarAsync(
+            new RegistrarEntregaInput(id, request.LinkDrive, request.NotificarWhatsApp), cancellationToken);
 
         if (!resultado.Sucesso)
             return BadRequest(new { erros = resultado.Erros });

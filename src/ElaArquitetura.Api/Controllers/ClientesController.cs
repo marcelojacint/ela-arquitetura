@@ -13,17 +13,20 @@ public class ClientesController : ControllerBase
     private readonly AtualizarClienteUseCase _atualizarClienteUseCase;
     private readonly BuscarClientesUseCase _buscarClientesUseCase;
     private readonly ObterClientePorIdUseCase _obterClientePorIdUseCase;
+    private readonly ObterWhatsAppLinkUseCase _obterWhatsAppLinkUseCase;
 
     public ClientesController(
         CriarClienteUseCase criarClienteUseCase,
         AtualizarClienteUseCase atualizarClienteUseCase,
         BuscarClientesUseCase buscarClientesUseCase,
-        ObterClientePorIdUseCase obterClientePorIdUseCase)
+        ObterClientePorIdUseCase obterClientePorIdUseCase,
+        ObterWhatsAppLinkUseCase obterWhatsAppLinkUseCase)
     {
         _criarClienteUseCase = criarClienteUseCase;
         _atualizarClienteUseCase = atualizarClienteUseCase;
         _buscarClientesUseCase = buscarClientesUseCase;
         _obterClientePorIdUseCase = obterClientePorIdUseCase;
+        _obterWhatsAppLinkUseCase = obterWhatsAppLinkUseCase;
     }
 
     public sealed record CriarClienteRequest(string Nome, string Telefone, string? Email, string? Endereco);
@@ -66,5 +69,12 @@ public class ClientesController : ControllerBase
             return BadRequest(new { erros = resultado.Erros });
 
         return Ok(resultado.Dados);
+    }
+
+    [HttpGet("{id:guid}/whatsapp-link")]
+    public async Task<IActionResult> ObterWhatsAppLink(Guid id, CancellationToken cancellationToken)
+    {
+        var resultado = await _obterWhatsAppLinkUseCase.ExecutarAsync(id, cancellationToken);
+        return resultado is null ? NotFound() : Ok(resultado);
     }
 }
