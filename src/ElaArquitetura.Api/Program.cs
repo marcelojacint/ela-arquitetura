@@ -29,6 +29,7 @@ builder.Services.AddScoped<IProjetoRepository, ProjetoRepository>();
 builder.Services.AddScoped<IEtapaRepository, EtapaRepository>();
 builder.Services.AddScoped<IChecklistItemRepository, ChecklistItemRepository>();
 builder.Services.AddScoped<IEntregaRepository, EntregaRepository>();
+builder.Services.AddScoped<IProjetoFuncionarioRepository, ProjetoFuncionarioRepository>();
 
 builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
@@ -48,13 +49,22 @@ builder.Services.AddScoped<ListarProjetosUseCase>();
 builder.Services.AddScoped<ObterProjetoPorIdUseCase>();
 builder.Services.AddScoped<AvancarEtapaUseCase>();
 builder.Services.AddScoped<ConcluirProjetoUseCase>();
+builder.Services.AddScoped<ReabrirProjetoUseCase>();
+builder.Services.AddScoped<AtribuirFuncionarioAoProjetoUseCase>();
+builder.Services.AddScoped<RemoverFuncionarioDoProjetoUseCase>();
+
 builder.Services.AddScoped<ConcluirChecklistItemUseCase>();
+builder.Services.AddScoped<ReabrirChecklistItemUseCase>();
+builder.Services.AddScoped<ListarChecklistDaEtapaAtualUseCase>();
+builder.Services.AddScoped<CriarChecklistItemUseCase>();
 
 var jwtSection = builder.Configuration.GetSection(JwtOptions.SectionName);
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        options.MapInboundClaims = false;
+
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
