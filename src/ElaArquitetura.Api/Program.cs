@@ -1,9 +1,12 @@
 using System.Text;
+using System.Text.Json.Serialization;
 using ElaArquitetura.Api;
 using ElaArquitetura.Application.Interfaces.Auth;
 using ElaArquitetura.Application.Interfaces.Repositories;
 using ElaArquitetura.Application.UseCases.Auth;
 using ElaArquitetura.Application.UseCases.Checklist;
+using ElaArquitetura.Application.UseCases.Clientes;
+using ElaArquitetura.Application.UseCases.Funcionarios;
 using ElaArquitetura.Application.UseCases.Projetos;
 using ElaArquitetura.Infrastructure.Auth;
 using ElaArquitetura.Infrastructure.Persistence;
@@ -11,10 +14,9 @@ using ElaArquitetura.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
-
-builder.Services.AddOpenApi();
 
 builder.Services.AddDbContext<ElaArquiteturaDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -32,7 +34,18 @@ builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 
 builder.Services.AddScoped<LoginUseCase>();
+
+builder.Services.AddScoped<CriarClienteUseCase>();
+builder.Services.AddScoped<AtualizarClienteUseCase>();
+builder.Services.AddScoped<BuscarClientesUseCase>();
+builder.Services.AddScoped<ObterClientePorIdUseCase>();
+
+builder.Services.AddScoped<CriarFuncionarioUseCase>();
+builder.Services.AddScoped<ListarFuncionariosUseCase>();
+
 builder.Services.AddScoped<CriarProjetoUseCase>();
+builder.Services.AddScoped<ListarProjetosUseCase>();
+builder.Services.AddScoped<ObterProjetoPorIdUseCase>();
 builder.Services.AddScoped<AvancarEtapaUseCase>();
 builder.Services.AddScoped<ConcluirProjetoUseCase>();
 builder.Services.AddScoped<ConcluirChecklistItemUseCase>();
@@ -55,14 +68,49 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 builder.Services.AddAuthorization();
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo { Title = "Éla Arquitetura API", Version = "v1" });
+
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Informe apenas o token JWT (sem o prefixo \"Bearer\")."
+    });
+
+    options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+    {
+        { new OpenApiSecuritySchemeReference("Bearer", document, null), new List<string>() }
+    });
+});
 
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI();
     await DevSeed.GarantirFuncionarioPadraoAsync(app.Services);
+}
+else
+{
+    app.UseExceptionHandler(errorApp =>
+    {
+        errorApp.Run(async context =>
+        {
+            context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsJsonAsync(new { erro = "Ocorreu um erro inesperado." });
+        });
+    });
 }
 
 app.UseHttpsRedirection();
