@@ -1,31 +1,36 @@
 using ElaArquitetura.Application.Common;
 using ElaArquitetura.Application.Interfaces.Auth;
 using ElaArquitetura.Application.Interfaces.Repositories;
+using ElaArquitetura.Domain.Entities;
 
 namespace ElaArquitetura.Application.UseCases.Auth;
 
 public sealed record LoginInput(string Email, string Senha);
 
-public sealed record LoginOutput(string Token, string Nome, string Cargo);
+public sealed record LoginOutput(string Token, string RefreshToken, string Nome, string Cargo);
 
-/// <summary>
-/// RF12 — autentica por email/senha. Mensagem de erro não diferencia
-/// "email não existe" de "senha errada" para não vazar quais emails estão cadastrados.
-/// </summary>
 public sealed class LoginUseCase
 {
+    private static readonly TimeSpan RefreshTokenValidade = TimeSpan.FromDays(7);
+
     private readonly IFuncionarioRepository _funcionarioRepository;
+    private readonly IRefreshTokenRepository _refreshTokenRepository;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
+    private readonly IRefreshTokenService _refreshTokenService;
 
     public LoginUseCase(
         IFuncionarioRepository funcionarioRepository,
+        IRefreshTokenRepository refreshTokenRepository,
         IPasswordHasher passwordHasher,
-        IJwtTokenGenerator jwtTokenGenerator)
+        IJwtTokenGenerator jwtTokenGenerator,
+        IRefreshTokenService refreshTokenService)
     {
         _funcionarioRepository = funcionarioRepository;
+        _refreshTokenRepository = refreshTokenRepository;
         _passwordHasher = passwordHasher;
         _jwtTokenGenerator = jwtTokenGenerator;
+        _refreshTokenService = refreshTokenService;
     }
 
     public async Task<UseCaseResult<LoginOutput>> ExecutarAsync(LoginInput input, CancellationToken cancellationToken)
@@ -37,6 +42,11 @@ public sealed class LoginUseCase
 
         var token = _jwtTokenGenerator.GerarToken(funcionario);
 
-        return UseCaseResult<LoginOutput>.Ok(new LoginOutput(token, funcionario.Nome, funcionario.Cargo));
+        var refreshTokenBruto = _refreshTokenService.GerarToken();
+        var refreshToken = new RefreshToken(
+            funcionario.Id, _refreshTokenService.Hash(refreshTokenBruto), DateTime.UtcNow.Add(RefreshTokenValidade));
+        await _refreshTokenRepository.AdicionarAsync(refreshToken, cancellationToken);
+
+        return UseCaseResult<LoginOutput>.Ok(new LoginOutput(token, refreshTokenBruto, funcionario.Nome, funcionario.Cargo));
     }
 }
