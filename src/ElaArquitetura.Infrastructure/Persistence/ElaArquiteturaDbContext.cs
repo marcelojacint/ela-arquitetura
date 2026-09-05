@@ -18,6 +18,7 @@ public class ElaArquiteturaDbContext : DbContext
     public DbSet<ChecklistItem> ChecklistItens => Set<ChecklistItem>();
     public DbSet<ProjetoFuncionario> ProjetoFuncionarios => Set<ProjetoFuncionario>();
     public DbSet<Entrega> Entregas => Set<Entrega>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
