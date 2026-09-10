@@ -39,5 +39,23 @@ public class Funcionario : Notifiable
         return funcionario;
     }
 
+    public void Atualizar(string nome, string email, string cargo)
+    {
+        if (string.IsNullOrWhiteSpace(nome))
+            AddNotification(nameof(Nome), "Nome do funcionário é obrigatório.");
+        else
+            Nome = nome;
+
+        if (string.IsNullOrWhiteSpace(email))
+            AddNotification(nameof(Email), "Email do funcionário é obrigatório.");
+        else
+            Email = email;
+
+        if (string.IsNullOrWhiteSpace(cargo))
+            AddNotification(nameof(Cargo), "Cargo do funcionário é obrigatório.");
+        else
+            Cargo = cargo;
+    }
+
     public void Desativar() => Ativo = false;
 }
