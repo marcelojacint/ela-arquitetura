@@ -45,9 +45,13 @@ builder.Services.AddScoped<AtualizarClienteUseCase>();
 builder.Services.AddScoped<BuscarClientesUseCase>();
 builder.Services.AddScoped<ObterClientePorIdUseCase>();
 builder.Services.AddScoped<ObterWhatsAppLinkUseCase>();
+builder.Services.AddScoped<DesativarClienteUseCase>();
 
 builder.Services.AddScoped<CriarFuncionarioUseCase>();
 builder.Services.AddScoped<ListarFuncionariosUseCase>();
+builder.Services.AddScoped<ObterFuncionarioPorIdUseCase>();
+builder.Services.AddScoped<AtualizarFuncionarioUseCase>();
+builder.Services.AddScoped<DesativarFuncionarioUseCase>();
 
 builder.Services.AddScoped<CriarProjetoUseCase>();
 builder.Services.AddScoped<ListarProjetosUseCase>();

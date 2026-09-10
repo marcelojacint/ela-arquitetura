@@ -14,19 +14,22 @@ public class ClientesController : ControllerBase
     private readonly BuscarClientesUseCase _buscarClientesUseCase;
     private readonly ObterClientePorIdUseCase _obterClientePorIdUseCase;
     private readonly ObterWhatsAppLinkUseCase _obterWhatsAppLinkUseCase;
+    private readonly DesativarClienteUseCase _desativarClienteUseCase;
 
     public ClientesController(
         CriarClienteUseCase criarClienteUseCase,
         AtualizarClienteUseCase atualizarClienteUseCase,
         BuscarClientesUseCase buscarClientesUseCase,
         ObterClientePorIdUseCase obterClientePorIdUseCase,
-        ObterWhatsAppLinkUseCase obterWhatsAppLinkUseCase)
+        ObterWhatsAppLinkUseCase obterWhatsAppLinkUseCase,
+        DesativarClienteUseCase desativarClienteUseCase)
     {
         _criarClienteUseCase = criarClienteUseCase;
         _atualizarClienteUseCase = atualizarClienteUseCase;
         _buscarClientesUseCase = buscarClientesUseCase;
         _obterClientePorIdUseCase = obterClientePorIdUseCase;
         _obterWhatsAppLinkUseCase = obterWhatsAppLinkUseCase;
+        _desativarClienteUseCase = desativarClienteUseCase;
     }
 
     public sealed record CriarClienteRequest(string Nome, string Telefone, string? Email, string? Endereco);
@@ -76,5 +79,16 @@ public class ClientesController : ControllerBase
     {
         var resultado = await _obterWhatsAppLinkUseCase.ExecutarAsync(id, cancellationToken);
         return resultado is null ? NotFound() : Ok(resultado);
+    }
+
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Desativar(Guid id, CancellationToken cancellationToken)
+    {
+        var resultado = await _desativarClienteUseCase.ExecutarAsync(new DesativarClienteInput(id), cancellationToken);
+
+        if (!resultado.Sucesso)
+            return NotFound(new { erros = resultado.Erros });
+
+        return NoContent();
     }
 }
