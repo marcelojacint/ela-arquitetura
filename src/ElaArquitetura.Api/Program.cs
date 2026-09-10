@@ -119,6 +119,13 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+
+    using (var scope = app.Services.CreateScope())
+    {
+        var dbContext = scope.ServiceProvider.GetRequiredService<ElaArquiteturaDbContext>();
+        await dbContext.Database.MigrateAsync();
+    }
+
     await DevSeed.GarantirFuncionarioPadraoAsync(app.Services);
 }
 else
@@ -141,3 +148,7 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+public partial class Program
+{
+}
