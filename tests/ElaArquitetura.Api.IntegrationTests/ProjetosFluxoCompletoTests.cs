@@ -34,13 +34,23 @@ public class ProjetosFluxoCompletoTests
         var percentuaisEsperados = new[] { 20, 40, 60, 80, 100 };
         for (var i = 0; i < percentuaisEsperados.Length; i++)
         {
-            await CriarEConcluirItemChecklistAsync(client, projeto.Id);
+            await ConcluirChecklistDaEtapaAtualAsync(client, projeto.Id);
 
             var avancarResponse = await client.PatchAsync($"/api/projetos/{projeto.Id}/avancar-etapa", null);
             Assert.Equal(HttpStatusCode.OK, avancarResponse.StatusCode);
 
             var projetoAtualizado = await avancarResponse.Content.ReadFromJsonAsync<ProjetoOutput>(TestJson.Options);
             Assert.Equal(percentuaisEsperados[i], projetoAtualizado!.PercentualConcluido);
+
+            if (i == 0)
+            {
+                var checklistEstudosPreliminares = await ObterChecklistAsync(client, projeto.Id);
+                Assert.Equal(3, checklistEstudosPreliminares.Count);
+                Assert.Contains(checklistEstudosPreliminares, item => item.Descricao == "Briefing");
+                Assert.Contains(checklistEstudosPreliminares, item => item.Descricao == "Levantamento em Locação");
+                Assert.Contains(checklistEstudosPreliminares, item => item.Descricao == "Estudo de Layout");
+                Assert.All(checklistEstudosPreliminares, item => Assert.False(item.Concluido));
+            }
         }
 
         var concluirSemEntregaResponse = await client.PatchAsync(
@@ -68,6 +78,24 @@ public class ProjetosFluxoCompletoTests
         Assert.Equal(HttpStatusCode.OK, reabrirResponse.StatusCode);
         var projetoReaberto = await reabrirResponse.Content.ReadFromJsonAsync<ProjetoOutput>(TestJson.Options);
         Assert.Equal(StatusProjeto.EmAndamento, projetoReaberto!.Status);
+    }
+
+    [Fact]
+    public async Task Projeto_Executivo_recebe_as_7_sub_etapas_automaticamente()
+    {
+        var client = await TestAuth.ComoAdminAsync(_factory.CreateClient());
+        var cliente = await CriarClienteAsync(client);
+        var projeto = await CriarProjetoAsync(client, cliente.Id);
+
+        for (var i = 0; i < 3; i++)
+        {
+            await ConcluirChecklistDaEtapaAtualAsync(client, projeto.Id);
+            await client.PatchAsync($"/api/projetos/{projeto.Id}/avancar-etapa", null);
+        }
+
+        var checklistProjetoExecutivo = await ObterChecklistAsync(client, projeto.Id);
+        Assert.Equal(7, checklistProjetoExecutivo.Count);
+        Assert.Contains(checklistProjetoExecutivo, item => item.Descricao == "Render");
     }
 
     [Fact]
@@ -116,11 +144,25 @@ public class ProjetosFluxoCompletoTests
         return (await response.Content.ReadFromJsonAsync<ProjetoOutput>(TestJson.Options))!;
     }
 
-    private static async Task CriarEConcluirItemChecklistAsync(HttpClient client, Guid projetoId)
+    private static async Task<List<ChecklistItemDetalheOutput>> ObterChecklistAsync(HttpClient client, Guid projetoId)
     {
-        var criarResponse = await client.PostAsJsonAsync($"/api/projetos/{projetoId}/checklist", new { descricao = "Item de teste" });
-        var item = await criarResponse.Content.ReadFromJsonAsync<ChecklistItemCriadoOutput>(TestJson.Options);
+        var response = await client.GetAsync($"/api/projetos/{projetoId}/checklist");
+        return (await response.Content.ReadFromJsonAsync<List<ChecklistItemDetalheOutput>>(TestJson.Options))!;
+    }
 
-        await client.PatchAsync($"/api/checklist/{item!.Id}/concluir", null);
+    private static async Task ConcluirChecklistDaEtapaAtualAsync(HttpClient client, Guid projetoId)
+    {
+        var itens = await ObterChecklistAsync(client, projetoId);
+
+        if (itens.Count == 0)
+        {
+            var criarResponse = await client.PostAsJsonAsync($"/api/projetos/{projetoId}/checklist", new { descricao = "Item de teste" });
+            var item = await criarResponse.Content.ReadFromJsonAsync<ChecklistItemCriadoOutput>(TestJson.Options);
+            await client.PatchAsync($"/api/checklist/{item!.Id}/concluir", null);
+            return;
+        }
+
+        foreach (var item in itens.Where(item => !item.Concluido))
+            await client.PatchAsync($"/api/checklist/{item.Id}/concluir", null);
     }
 }
