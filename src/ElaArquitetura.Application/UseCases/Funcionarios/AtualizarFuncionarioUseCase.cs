@@ -3,7 +3,7 @@ using ElaArquitetura.Application.Interfaces.Repositories;
 
 namespace ElaArquitetura.Application.UseCases.Funcionarios;
 
-public sealed record AtualizarFuncionarioInput(Guid Id, string Nome, string Email, string Cargo);
+public sealed record AtualizarFuncionarioInput(Guid Id, string Nome, string Email, string Cargo, string? Telefone);
 
 public sealed class AtualizarFuncionarioUseCase
 {
@@ -21,7 +21,7 @@ public sealed class AtualizarFuncionarioUseCase
         if (existenteComEmail is not null && existenteComEmail.Id != funcionario.Id)
             return UseCaseResult<FuncionarioOutput>.Falha(new[] { "Já existe um funcionário cadastrado com esse email." });
 
-        funcionario.Atualizar(input.Nome, input.Email, input.Cargo);
+        funcionario.Atualizar(input.Nome, input.Email, input.Cargo, input.Telefone);
         if (!funcionario.IsValid)
             return UseCaseResult<FuncionarioOutput>.Falha(funcionario.Notifications.Select(n => n.Mensagem));
 

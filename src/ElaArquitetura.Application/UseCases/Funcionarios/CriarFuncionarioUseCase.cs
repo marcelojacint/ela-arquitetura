@@ -5,9 +5,8 @@ using ElaArquitetura.Domain.Entities;
 
 namespace ElaArquitetura.Application.UseCases.Funcionarios;
 
-public sealed record CriarFuncionarioInput(string Nome, string Email, string Cargo, string Senha);
+public sealed record CriarFuncionarioInput(string Nome, string Email, string Cargo, string Senha, string? Telefone);
 
-/// <summary>RF02/RNF10 — a senha em texto puro nunca chega ao Domain nem é persistida; só o hash.</summary>
 public sealed class CriarFuncionarioUseCase
 {
     private const int SenhaMinima = 8;
@@ -31,7 +30,7 @@ public sealed class CriarFuncionarioUseCase
             return UseCaseResult<FuncionarioOutput>.Falha(new[] { "Já existe um funcionário cadastrado com esse email." });
 
         var senhaHash = _passwordHasher.Hash(input.Senha);
-        var funcionario = Funcionario.Criar(input.Nome, input.Email, input.Cargo, senhaHash);
+        var funcionario = Funcionario.Criar(input.Nome, input.Email, input.Cargo, senhaHash, input.Telefone);
         if (!funcionario.IsValid)
             return UseCaseResult<FuncionarioOutput>.Falha(funcionario.Notifications.Select(n => n.Mensagem));
 
