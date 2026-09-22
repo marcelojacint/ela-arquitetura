@@ -17,6 +17,13 @@ public class FuncionarioConfiguration : IEntityTypeConfiguration<Funcionario>
         builder.Property(f => f.SenhaHash).IsRequired();
         builder.Property(f => f.Ativo).IsRequired();
 
+        builder.OwnsOne(f => f.Telefone, telefone =>
+        {
+            telefone.Property(t => t.Numero)
+                .HasColumnName("telefone")
+                .HasMaxLength(20);
+        });
+
         builder.HasIndex(f => f.Email).IsUnique();
     }
 }
