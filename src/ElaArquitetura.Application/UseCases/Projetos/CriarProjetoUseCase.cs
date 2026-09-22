@@ -1,5 +1,6 @@
 using ElaArquitetura.Application.Common;
 using ElaArquitetura.Application.Interfaces.Repositories;
+using ElaArquitetura.Application.UseCases.Checklist;
 using ElaArquitetura.Domain.Entities;
 
 namespace ElaArquitetura.Application.UseCases.Projetos;
@@ -11,15 +12,18 @@ public sealed class CriarProjetoUseCase
     private readonly IProjetoRepository _projetoRepository;
     private readonly IClienteRepository _clienteRepository;
     private readonly IEtapaRepository _etapaRepository;
+    private readonly ProvisionadorChecklist _provisionadorChecklist;
 
     public CriarProjetoUseCase(
         IProjetoRepository projetoRepository,
         IClienteRepository clienteRepository,
-        IEtapaRepository etapaRepository)
+        IEtapaRepository etapaRepository,
+        ProvisionadorChecklist provisionadorChecklist)
     {
         _projetoRepository = projetoRepository;
         _clienteRepository = clienteRepository;
         _etapaRepository = etapaRepository;
+        _provisionadorChecklist = provisionadorChecklist;
     }
 
     public async Task<UseCaseResult<ProjetoOutput>> ExecutarAsync(CriarProjetoInput input, CancellationToken cancellationToken)
@@ -35,6 +39,7 @@ public sealed class CriarProjetoUseCase
             return UseCaseResult<ProjetoOutput>.Falha(projeto.Notifications.Select(n => n.Mensagem));
 
         await _projetoRepository.AdicionarAsync(projeto, cancellationToken);
+        await _provisionadorChecklist.ProvisionarAsync(projeto.Id, etapaInicial.Id, cancellationToken);
 
         var etapas = await _etapaRepository.ListarTodasAsync(cancellationToken);
 
