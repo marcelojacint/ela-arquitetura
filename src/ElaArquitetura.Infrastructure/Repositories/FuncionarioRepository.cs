@@ -25,4 +25,10 @@ public class FuncionarioRepository : IFuncionarioRepository
         await _context.Funcionarios.AddAsync(funcionario, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
     }
+
+    public async Task AtualizarAsync(Funcionario funcionario, CancellationToken cancellationToken)
+    {
+        _context.Funcionarios.Update(funcionario);
+        await _context.SaveChangesAsync(cancellationToken);
+    }
 }

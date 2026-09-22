@@ -7,6 +7,7 @@ using ElaArquitetura.Application.UseCases.Auth;
 using ElaArquitetura.Application.UseCases.Checklist;
 using ElaArquitetura.Application.UseCases.Clientes;
 using ElaArquitetura.Application.UseCases.Entregas;
+using ElaArquitetura.Application.UseCases.Etapas;
 using ElaArquitetura.Application.UseCases.Funcionarios;
 using ElaArquitetura.Application.UseCases.Projetos;
 using ElaArquitetura.Infrastructure.Auth;
@@ -28,6 +29,7 @@ builder.Services.AddScoped<IClienteRepository, ClienteRepository>();
 builder.Services.AddScoped<IFuncionarioRepository, FuncionarioRepository>();
 builder.Services.AddScoped<IProjetoRepository, ProjetoRepository>();
 builder.Services.AddScoped<IEtapaRepository, EtapaRepository>();
+builder.Services.AddScoped<ISubEtapaRepository, SubEtapaRepository>();
 builder.Services.AddScoped<IChecklistItemRepository, ChecklistItemRepository>();
 builder.Services.AddScoped<IEntregaRepository, EntregaRepository>();
 builder.Services.AddScoped<IProjetoFuncionarioRepository, ProjetoFuncionarioRepository>();
@@ -45,9 +47,13 @@ builder.Services.AddScoped<AtualizarClienteUseCase>();
 builder.Services.AddScoped<BuscarClientesUseCase>();
 builder.Services.AddScoped<ObterClientePorIdUseCase>();
 builder.Services.AddScoped<ObterWhatsAppLinkUseCase>();
+builder.Services.AddScoped<DesativarClienteUseCase>();
 
 builder.Services.AddScoped<CriarFuncionarioUseCase>();
 builder.Services.AddScoped<ListarFuncionariosUseCase>();
+builder.Services.AddScoped<ObterFuncionarioPorIdUseCase>();
+builder.Services.AddScoped<AtualizarFuncionarioUseCase>();
+builder.Services.AddScoped<DesativarFuncionarioUseCase>();
 
 builder.Services.AddScoped<CriarProjetoUseCase>();
 builder.Services.AddScoped<ListarProjetosUseCase>();
@@ -62,8 +68,11 @@ builder.Services.AddScoped<ConcluirChecklistItemUseCase>();
 builder.Services.AddScoped<ReabrirChecklistItemUseCase>();
 builder.Services.AddScoped<ListarChecklistDaEtapaAtualUseCase>();
 builder.Services.AddScoped<CriarChecklistItemUseCase>();
+builder.Services.AddScoped<ProvisionadorChecklist>();
 
 builder.Services.AddScoped<RegistrarEntregaUseCase>();
+
+builder.Services.AddScoped<ListarEtapasUseCase>();
 
 var jwtSection = builder.Configuration.GetSection(JwtOptions.SectionName);
 
@@ -115,6 +124,13 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+
+    using (var scope = app.Services.CreateScope())
+    {
+        var dbContext = scope.ServiceProvider.GetRequiredService<ElaArquiteturaDbContext>();
+        await dbContext.Database.MigrateAsync();
+    }
+
     await DevSeed.GarantirFuncionarioPadraoAsync(app.Services);
 }
 else
@@ -137,3 +153,7 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+public partial class Program
+{
+}

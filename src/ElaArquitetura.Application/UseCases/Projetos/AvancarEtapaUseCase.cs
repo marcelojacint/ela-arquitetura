@@ -1,5 +1,6 @@
 using ElaArquitetura.Application.Common;
 using ElaArquitetura.Application.Interfaces.Repositories;
+using ElaArquitetura.Application.UseCases.Checklist;
 using Microsoft.Extensions.Logging;
 
 namespace ElaArquitetura.Application.UseCases.Projetos;
@@ -11,17 +12,20 @@ public sealed class AvancarEtapaUseCase
     private readonly IProjetoRepository _projetoRepository;
     private readonly IEtapaRepository _etapaRepository;
     private readonly IChecklistItemRepository _checklistItemRepository;
+    private readonly ProvisionadorChecklist _provisionadorChecklist;
     private readonly ILogger<AvancarEtapaUseCase> _logger;
 
     public AvancarEtapaUseCase(
         IProjetoRepository projetoRepository,
         IEtapaRepository etapaRepository,
         IChecklistItemRepository checklistItemRepository,
+        ProvisionadorChecklist provisionadorChecklist,
         ILogger<AvancarEtapaUseCase> logger)
     {
         _projetoRepository = projetoRepository;
         _etapaRepository = etapaRepository;
         _checklistItemRepository = checklistItemRepository;
+        _provisionadorChecklist = provisionadorChecklist;
         _logger = logger;
     }
 
@@ -46,6 +50,7 @@ public sealed class AvancarEtapaUseCase
             return UseCaseResult<ProjetoOutput>.Falha(projeto.Notifications.Select(n => n.Mensagem));
 
         await _projetoRepository.AtualizarAsync(projeto, cancellationToken);
+        await _provisionadorChecklist.ProvisionarAsync(projeto.Id, proximaEtapa.Id, cancellationToken);
 
         _logger.LogInformation(
             "Projeto {ProjetoId} avancou da etapa {EtapaAnteriorId} para {EtapaNovaId}",

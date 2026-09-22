@@ -8,4 +8,5 @@ public interface IFuncionarioRepository
     Task<Funcionario?> ObterPorEmailAsync(string email, CancellationToken cancellationToken);
     Task<IReadOnlyCollection<Funcionario>> ListarAsync(CancellationToken cancellationToken);
     Task AdicionarAsync(Funcionario funcionario, CancellationToken cancellationToken);
+    Task AtualizarAsync(Funcionario funcionario, CancellationToken cancellationToken);
 }

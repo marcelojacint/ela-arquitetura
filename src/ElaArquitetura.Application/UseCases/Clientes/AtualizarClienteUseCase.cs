@@ -3,7 +3,14 @@ using ElaArquitetura.Application.Interfaces.Repositories;
 
 namespace ElaArquitetura.Application.UseCases.Clientes;
 
-public sealed record AtualizarClienteInput(Guid Id, string Nome, string Telefone, string? Email, string? Endereco);
+public sealed record AtualizarClienteInput(
+    Guid Id,
+    string Nome,
+    string Telefone,
+    string? Email,
+    string? Endereco,
+    string? Cpf,
+    string? PontoReferencia);
 
 public sealed class AtualizarClienteUseCase
 {
@@ -17,7 +24,7 @@ public sealed class AtualizarClienteUseCase
         if (cliente is null)
             return UseCaseResult<ClienteOutput>.Falha(new[] { "Cliente não encontrado." });
 
-        cliente.Atualizar(input.Nome, input.Telefone, input.Email, input.Endereco);
+        cliente.Atualizar(input.Nome, input.Telefone, input.Email, input.Endereco, input.Cpf, input.PontoReferencia);
         if (!cliente.IsValid)
             return UseCaseResult<ClienteOutput>.Falha(cliente.Notifications.Select(n => n.Mensagem));
 
