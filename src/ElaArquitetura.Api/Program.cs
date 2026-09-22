@@ -7,6 +7,7 @@ using ElaArquitetura.Application.UseCases.Auth;
 using ElaArquitetura.Application.UseCases.Checklist;
 using ElaArquitetura.Application.UseCases.Clientes;
 using ElaArquitetura.Application.UseCases.Entregas;
+using ElaArquitetura.Application.UseCases.Etapas;
 using ElaArquitetura.Application.UseCases.Funcionarios;
 using ElaArquitetura.Application.UseCases.Projetos;
 using ElaArquitetura.Infrastructure.Auth;
@@ -28,6 +29,7 @@ builder.Services.AddScoped<IClienteRepository, ClienteRepository>();
 builder.Services.AddScoped<IFuncionarioRepository, FuncionarioRepository>();
 builder.Services.AddScoped<IProjetoRepository, ProjetoRepository>();
 builder.Services.AddScoped<IEtapaRepository, EtapaRepository>();
+builder.Services.AddScoped<ISubEtapaRepository, SubEtapaRepository>();
 builder.Services.AddScoped<IChecklistItemRepository, ChecklistItemRepository>();
 builder.Services.AddScoped<IEntregaRepository, EntregaRepository>();
 builder.Services.AddScoped<IProjetoFuncionarioRepository, ProjetoFuncionarioRepository>();
@@ -68,6 +70,8 @@ builder.Services.AddScoped<ListarChecklistDaEtapaAtualUseCase>();
 builder.Services.AddScoped<CriarChecklistItemUseCase>();
 
 builder.Services.AddScoped<RegistrarEntregaUseCase>();
+
+builder.Services.AddScoped<ListarEtapasUseCase>();
 
 var jwtSection = builder.Configuration.GetSection(JwtOptions.SectionName);
 
