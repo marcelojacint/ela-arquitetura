@@ -32,15 +32,16 @@ public class ClientesController : ControllerBase
         _desativarClienteUseCase = desativarClienteUseCase;
     }
 
-    public sealed record CriarClienteRequest(string Nome, string Telefone, string? Email, string? Endereco);
+    public sealed record CriarClienteRequest(string Nome, string Telefone, string? Email, string? Endereco, string? Cpf, string? PontoReferencia);
 
-    public sealed record AtualizarClienteRequest(string Nome, string Telefone, string? Email, string? Endereco);
+    public sealed record AtualizarClienteRequest(string Nome, string Telefone, string? Email, string? Endereco, string? Cpf, string? PontoReferencia);
 
     [HttpPost]
     public async Task<IActionResult> Criar(CriarClienteRequest request, CancellationToken cancellationToken)
     {
         var resultado = await _criarClienteUseCase.ExecutarAsync(
-            new CriarClienteInput(request.Nome, request.Telefone, request.Email, request.Endereco), cancellationToken);
+            new CriarClienteInput(request.Nome, request.Telefone, request.Email, request.Endereco, request.Cpf, request.PontoReferencia),
+            cancellationToken);
 
         if (!resultado.Sucesso)
             return BadRequest(new { erros = resultado.Erros });
@@ -66,7 +67,8 @@ public class ClientesController : ControllerBase
     public async Task<IActionResult> Atualizar(Guid id, AtualizarClienteRequest request, CancellationToken cancellationToken)
     {
         var resultado = await _atualizarClienteUseCase.ExecutarAsync(
-            new AtualizarClienteInput(id, request.Nome, request.Telefone, request.Email, request.Endereco), cancellationToken);
+            new AtualizarClienteInput(id, request.Nome, request.Telefone, request.Email, request.Endereco, request.Cpf, request.PontoReferencia),
+            cancellationToken);
 
         if (!resultado.Sucesso)
             return BadRequest(new { erros = resultado.Erros });

@@ -29,14 +29,14 @@ public class FuncionariosController : ControllerBase
         _desativarFuncionarioUseCase = desativarFuncionarioUseCase;
     }
 
-    public sealed record CriarFuncionarioRequest(string Nome, string Email, string Cargo, string Senha);
-    public sealed record AtualizarFuncionarioRequest(string Nome, string Email, string Cargo);
+    public sealed record CriarFuncionarioRequest(string Nome, string Email, string Cargo, string Senha, string? Telefone);
+    public sealed record AtualizarFuncionarioRequest(string Nome, string Email, string Cargo, string? Telefone);
 
     [HttpPost]
     public async Task<IActionResult> Criar(CriarFuncionarioRequest request, CancellationToken cancellationToken)
     {
         var resultado = await _criarFuncionarioUseCase.ExecutarAsync(
-            new CriarFuncionarioInput(request.Nome, request.Email, request.Cargo, request.Senha), cancellationToken);
+            new CriarFuncionarioInput(request.Nome, request.Email, request.Cargo, request.Senha, request.Telefone), cancellationToken);
 
         if (!resultado.Sucesso)
             return BadRequest(new { erros = resultado.Erros });
@@ -62,7 +62,7 @@ public class FuncionariosController : ControllerBase
     public async Task<IActionResult> Atualizar(Guid id, AtualizarFuncionarioRequest request, CancellationToken cancellationToken)
     {
         var resultado = await _atualizarFuncionarioUseCase.ExecutarAsync(
-            new AtualizarFuncionarioInput(id, request.Nome, request.Email, request.Cargo), cancellationToken);
+            new AtualizarFuncionarioInput(id, request.Nome, request.Email, request.Cargo, request.Telefone), cancellationToken);
 
         if (!resultado.Sucesso)
             return BadRequest(new { erros = resultado.Erros });
