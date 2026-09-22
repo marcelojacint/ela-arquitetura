@@ -10,6 +10,8 @@ public class Cliente : Notifiable
     public Telefone? Telefone { get; private set; }
     public string? Email { get; private set; }
     public string? Endereco { get; private set; }
+    public string? Cpf { get; private set; }
+    public string? PontoReferencia { get; private set; }
     public DateTime DataCadastro { get; private set; }
     public bool Ativo { get; private set; }
 
@@ -17,7 +19,13 @@ public class Cliente : Notifiable
     {
     }
 
-    public static Cliente Criar(string nome, string telefoneBruto, string? email = null, string? endereco = null)
+    public static Cliente Criar(
+        string nome,
+        string telefoneBruto,
+        string? email = null,
+        string? endereco = null,
+        string? cpf = null,
+        string? pontoReferencia = null)
     {
         var cliente = new Cliente
         {
@@ -25,6 +33,8 @@ public class Cliente : Notifiable
             Nome = nome,
             Email = email,
             Endereco = endereco,
+            Cpf = string.IsNullOrWhiteSpace(cpf) ? null : cpf.Trim(),
+            PontoReferencia = string.IsNullOrWhiteSpace(pontoReferencia) ? null : pontoReferencia.Trim(),
             DataCadastro = DateTime.UtcNow,
             Ativo = true
         };
@@ -40,7 +50,13 @@ public class Cliente : Notifiable
         return cliente;
     }
 
-    public void Atualizar(string nome, string telefoneBruto, string? email, string? endereco)
+    public void Atualizar(
+        string nome,
+        string telefoneBruto,
+        string? email,
+        string? endereco,
+        string? cpf,
+        string? pontoReferencia)
     {
         if (string.IsNullOrWhiteSpace(nome))
             AddNotification(nameof(Nome), "Nome do cliente é obrigatório.");
@@ -54,6 +70,8 @@ public class Cliente : Notifiable
 
         Email = email;
         Endereco = endereco;
+        Cpf = string.IsNullOrWhiteSpace(cpf) ? null : cpf.Trim();
+        PontoReferencia = string.IsNullOrWhiteSpace(pontoReferencia) ? null : pontoReferencia.Trim();
     }
 
     public void Desativar() => Ativo = false;
