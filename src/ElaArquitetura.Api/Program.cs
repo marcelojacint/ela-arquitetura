@@ -94,6 +94,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 builder.Services.AddAuthorization();
+builder.Services.AddCors(options =>
+    options.AddPolicy("Desenvolvimento", policy => policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
 builder.Services.AddControllers()
     .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
@@ -147,6 +149,11 @@ else
 }
 
 app.UseHttpsRedirection();
+
+// Libera o app Expo rodando no navegador (expo start --web) em ambiente local.
+if (app.Environment.IsDevelopment())
+    app.UseCors("Desenvolvimento");
+
 app.UseAuthentication();
 app.UseAuthorization();
 
