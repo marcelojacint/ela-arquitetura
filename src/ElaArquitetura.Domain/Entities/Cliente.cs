@@ -12,6 +12,7 @@ public class Cliente : Notifiable
     public string? Endereco { get; private set; }
     public string? Cpf { get; private set; }
     public string? PontoReferencia { get; private set; }
+    public string? EnderecoObra { get; private set; }
     public DateTime DataCadastro { get; private set; }
     public bool Ativo { get; private set; }
 
@@ -25,7 +26,8 @@ public class Cliente : Notifiable
         string? email = null,
         string? endereco = null,
         string? cpf = null,
-        string? pontoReferencia = null)
+        string? pontoReferencia = null,
+        string? enderecoObra = null)
     {
         var cliente = new Cliente
         {
@@ -35,6 +37,7 @@ public class Cliente : Notifiable
             Endereco = endereco,
             Cpf = string.IsNullOrWhiteSpace(cpf) ? null : cpf.Trim(),
             PontoReferencia = string.IsNullOrWhiteSpace(pontoReferencia) ? null : pontoReferencia.Trim(),
+            EnderecoObra = string.IsNullOrWhiteSpace(enderecoObra) ? null : enderecoObra.Trim(),
             DataCadastro = DateTime.UtcNow,
             Ativo = true
         };
@@ -56,7 +59,8 @@ public class Cliente : Notifiable
         string? email,
         string? endereco,
         string? cpf,
-        string? pontoReferencia)
+        string? pontoReferencia,
+        string? enderecoObra = null)
     {
         if (string.IsNullOrWhiteSpace(nome))
             AddNotification(nameof(Nome), "Nome do cliente é obrigatório.");
@@ -72,6 +76,7 @@ public class Cliente : Notifiable
         Endereco = endereco;
         Cpf = string.IsNullOrWhiteSpace(cpf) ? null : cpf.Trim();
         PontoReferencia = string.IsNullOrWhiteSpace(pontoReferencia) ? null : pontoReferencia.Trim();
+        EnderecoObra = string.IsNullOrWhiteSpace(enderecoObra) ? null : enderecoObra.Trim();
     }
 
     public void Desativar() => Ativo = false;

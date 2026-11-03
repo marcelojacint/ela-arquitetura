@@ -31,4 +31,20 @@ public class ClienteTests
         Assert.False(cliente.IsValid);
         Assert.Contains(cliente.Notifications, n => n.Chave == nameof(Cliente.Nome));
     }
+
+    [Fact]
+    public void Criar_deve_guardar_endereco_da_obra_sem_espacos_extras()
+    {
+        var cliente = Cliente.Criar("Maria Silva", "11987654321", enderecoObra: "  Rua da Obra, 50  ");
+
+        Assert.Equal("Rua da Obra, 50", cliente.EnderecoObra);
+    }
+
+    [Fact]
+    public void Criar_deve_deixar_endereco_da_obra_nulo_quando_vazio()
+    {
+        var cliente = Cliente.Criar("Maria Silva", "11987654321", enderecoObra: "   ");
+
+        Assert.Null(cliente.EnderecoObra);
+    }
 }
