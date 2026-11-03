@@ -51,6 +51,11 @@ public sealed class ListarChecklistCompletaUseCase
         var itens = await _checklistItemRepository.ListarPorProjetoAsync(projeto.Id, cancellationToken);
 
         var ordemAtual = etapas.FirstOrDefault(e => e.Id == projeto.EtapaAtualId)?.Ordem ?? 0;
+
+        // Itens das sub-etapas na ordem do fluxo; os avulsos vêm depois.
+        var ordemSubEtapa = subEtapas.ToDictionary(s => s.Id, s => s.Ordem);
+        int OrdemDoItem(Guid? subEtapaId) =>
+            subEtapaId is not null && ordemSubEtapa.TryGetValue(subEtapaId.Value, out var ordem) ? ordem : int.MaxValue;
         var projetoConcluido = projeto.Status == StatusProjeto.Concluido;
 
         var saida = etapas
@@ -70,6 +75,7 @@ public sealed class ListarChecklistCompletaUseCase
                     .ToList(),
                 itens
                     .Where(i => i.EtapaId == etapa.Id)
+                    .OrderBy(i => OrdemDoItem(i.SubEtapaId))
                     .Select(i => new ChecklistItemDetalheOutput(i.Id, i.EtapaId, i.SubEtapaId, i.Descricao, i.Concluido, i.ConcluidoPor, i.DataConclusao))
                     .ToList()))
             .ToList();
