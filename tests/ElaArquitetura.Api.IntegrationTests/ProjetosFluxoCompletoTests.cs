@@ -18,20 +18,28 @@ public class ProjetosFluxoCompletoTests
     public ProjetosFluxoCompletoTests(CustomWebApplicationFactory factory) => _factory = factory;
 
     [Fact]
-    public async Task Projeto_percorre_as_6_etapas_ate_ser_concluido()
+    public async Task Projeto_comeca_em_estudos_preliminares_e_percorre_as_etapas_ate_ser_concluido()
     {
         var client = await TestAuth.ComoAdminAsync(_factory.CreateClient());
 
         var cliente = await CriarClienteAsync(client);
         var projeto = await CriarProjetoAsync(client, cliente.Id);
 
-        Assert.Equal(0, projeto.PercentualConcluido);
+        // "Cadastro do Cliente" é opcional e já está cumprida: o projeto nasce em Estudos Preliminares.
+        Assert.Equal(20, projeto.PercentualConcluido);
         Assert.Equal(StatusProjeto.EmAndamento, projeto.Status);
+
+        var checklistEstudosPreliminares = await ObterChecklistAsync(client, projeto.Id);
+        Assert.Equal(3, checklistEstudosPreliminares.Count);
+        Assert.Contains(checklistEstudosPreliminares, item => item.Descricao == "Briefing");
+        Assert.Contains(checklistEstudosPreliminares, item => item.Descricao == "Levantamento em Locação");
+        Assert.Contains(checklistEstudosPreliminares, item => item.Descricao == "Estudo de Layout");
+        Assert.All(checklistEstudosPreliminares, item => Assert.False(item.Concluido));
 
         var avancarSemChecklistResponse = await client.PatchAsync($"/api/projetos/{projeto.Id}/avancar-etapa", null);
         Assert.Equal(HttpStatusCode.BadRequest, avancarSemChecklistResponse.StatusCode);
 
-        var percentuaisEsperados = new[] { 20, 40, 60, 80, 100 };
+        var percentuaisEsperados = new[] { 40, 60, 80, 100 };
         for (var i = 0; i < percentuaisEsperados.Length; i++)
         {
             await ConcluirChecklistDaEtapaAtualAsync(client, projeto.Id);
@@ -44,12 +52,9 @@ public class ProjetosFluxoCompletoTests
 
             if (i == 0)
             {
-                var checklistEstudosPreliminares = await ObterChecklistAsync(client, projeto.Id);
-                Assert.Equal(3, checklistEstudosPreliminares.Count);
-                Assert.Contains(checklistEstudosPreliminares, item => item.Descricao == "Briefing");
-                Assert.Contains(checklistEstudosPreliminares, item => item.Descricao == "Levantamento em Locação");
-                Assert.Contains(checklistEstudosPreliminares, item => item.Descricao == "Estudo de Layout");
-                Assert.All(checklistEstudosPreliminares, item => Assert.False(item.Concluido));
+                var checklistAnteprojeto = await ObterChecklistAsync(client, projeto.Id);
+                Assert.Single(checklistAnteprojeto);
+                Assert.Equal("Maquete 3D", checklistAnteprojeto.First().Descricao);
             }
         }
 
@@ -81,21 +86,21 @@ public class ProjetosFluxoCompletoTests
     }
 
     [Fact]
-    public async Task Projeto_Executivo_recebe_as_7_sub_etapas_automaticamente()
+    public async Task Projeto_Executivo_recebe_as_5_sub_etapas_automaticamente()
     {
         var client = await TestAuth.ComoAdminAsync(_factory.CreateClient());
         var cliente = await CriarClienteAsync(client);
         var projeto = await CriarProjetoAsync(client, cliente.Id);
 
-        for (var i = 0; i < 3; i++)
+        for (var i = 0; i < 2; i++)
         {
             await ConcluirChecklistDaEtapaAtualAsync(client, projeto.Id);
             await client.PatchAsync($"/api/projetos/{projeto.Id}/avancar-etapa", null);
         }
 
         var checklistProjetoExecutivo = await ObterChecklistAsync(client, projeto.Id);
-        Assert.Equal(7, checklistProjetoExecutivo.Count);
-        Assert.Contains(checklistProjetoExecutivo, item => item.Descricao == "Render");
+        Assert.Equal(5, checklistProjetoExecutivo.Count);
+        Assert.Contains(checklistProjetoExecutivo, item => item.Descricao == "Detalhamento de Pedras e Bancadas");
     }
 
     [Fact]
