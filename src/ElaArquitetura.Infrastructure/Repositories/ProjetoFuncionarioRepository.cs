@@ -20,6 +20,11 @@ public class ProjetoFuncionarioRepository : IProjetoFuncionarioRepository
             .Where(pf => pf.ProjetoId == projetoId)
             .ToListAsync(cancellationToken);
 
+    public async Task<IReadOnlyCollection<ProjetoFuncionario>> ListarPorProjetosAsync(IReadOnlyCollection<Guid> projetoIds, CancellationToken cancellationToken)
+        => await _context.ProjetoFuncionarios
+            .Where(pf => projetoIds.Contains(pf.ProjetoId))
+            .ToListAsync(cancellationToken);
+
     public async Task AdicionarAsync(ProjetoFuncionario projetoFuncionario, CancellationToken cancellationToken)
     {
         await _context.ProjetoFuncionarios.AddAsync(projetoFuncionario, cancellationToken);

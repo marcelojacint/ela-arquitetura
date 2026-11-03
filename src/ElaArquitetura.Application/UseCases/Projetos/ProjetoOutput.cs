@@ -3,6 +3,26 @@ using ElaArquitetura.Domain.Enums;
 
 namespace ElaArquitetura.Application.UseCases.Projetos;
 
+public sealed record FuncionarioDoProjetoOutput(Guid FuncionarioId, string Nome, string? PapelNoProjeto)
+{
+    /// <summary>Agrupa os vínculos por projeto, já com o nome de cada funcionário.</summary>
+    public static ILookup<Guid, FuncionarioDoProjetoOutput> AgruparPorProjeto(
+        IEnumerable<ProjetoFuncionario> vinculos,
+        IEnumerable<Funcionario> funcionarios)
+    {
+        var nomes = funcionarios.ToDictionary(f => f.Id, f => f.Nome);
+
+        return vinculos
+            .Where(v => nomes.ContainsKey(v.FuncionarioId))
+            .ToLookup(
+                v => v.ProjetoId,
+                v => new FuncionarioDoProjetoOutput(v.FuncionarioId, nomes[v.FuncionarioId], v.PapelNoProjeto));
+    }
+}
+
+/// <summary>
+/// Funcionarios só vem preenchido na listagem e na consulta por id; nas demais ações sai vazio.
+/// </summary>
 public sealed record ProjetoOutput(
     Guid Id,
     Guid ClienteId,
@@ -11,9 +31,13 @@ public sealed record ProjetoOutput(
     Guid EtapaAtualId,
     DateTime DataInicio,
     DateTime? DataConclusao,
-    int PercentualConcluido)
+    int PercentualConcluido,
+    IReadOnlyCollection<FuncionarioDoProjetoOutput> Funcionarios)
 {
-    public static ProjetoOutput DeProjeto(Projeto projeto, IReadOnlyCollection<Etapa> etapas)
+    public static ProjetoOutput DeProjeto(
+        Projeto projeto,
+        IReadOnlyCollection<Etapa> etapas,
+        IEnumerable<FuncionarioDoProjetoOutput>? funcionarios = null)
     {
         var percentual = CalcularPercentual(projeto, etapas);
 
@@ -25,7 +49,8 @@ public sealed record ProjetoOutput(
             projeto.EtapaAtualId,
             projeto.DataInicio,
             projeto.DataConclusao,
-            percentual);
+            percentual,
+            funcionarios?.ToList() ?? new List<FuncionarioDoProjetoOutput>());
     }
 
     private static int CalcularPercentual(Projeto projeto, IReadOnlyCollection<Etapa> etapas)
