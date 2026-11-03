@@ -59,7 +59,7 @@ public class ProjetosController : ControllerBase
     public sealed record CriarProjetoRequest(Guid ClienteId, string Titulo);
     public sealed record AlterarStatusRequest(StatusProjeto Status);
     public sealed record AtribuirFuncionarioRequest(Guid FuncionarioId, string? PapelNoProjeto);
-    public sealed record CriarChecklistItemRequest(string Descricao, Guid? SubEtapaId);
+    public sealed record CriarChecklistItemRequest(string Descricao, Guid? SubEtapaId, Guid? EtapaId);
     public sealed record RegistrarEntregaRequest(string LinkDrive, bool NotificarWhatsApp);
 
     [HttpPost]
@@ -161,7 +161,7 @@ public class ProjetosController : ControllerBase
     public async Task<IActionResult> CriarItemChecklist(Guid id, CriarChecklistItemRequest request, CancellationToken cancellationToken)
     {
         var resultado = await _criarChecklistItemUseCase.ExecutarAsync(
-            new CriarChecklistItemInput(id, request.Descricao, request.SubEtapaId), cancellationToken);
+            new CriarChecklistItemInput(id, request.Descricao, request.SubEtapaId, request.EtapaId), cancellationToken);
 
         if (!resultado.Sucesso)
             return BadRequest(new { erros = resultado.Erros });
