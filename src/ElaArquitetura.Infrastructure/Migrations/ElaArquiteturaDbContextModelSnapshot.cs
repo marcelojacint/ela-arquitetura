@@ -166,7 +166,7 @@ namespace ElaArquitetura.Infrastructure.Migrations
                             Id = new Guid("00000000-0000-0000-0000-000000000001"),
                             Final = false,
                             Nome = "Cadastro do Cliente",
-                            Opcional = false,
+                            Opcional = true,
                             Ordem = 1
                         },
                         new
@@ -197,7 +197,7 @@ namespace ElaArquitetura.Infrastructure.Migrations
                         {
                             Id = new Guid("00000000-0000-0000-0000-000000000005"),
                             Final = false,
-                            Nome = "Relatório de Obra",
+                            Nome = "Acompanhamentos",
                             Opcional = true,
                             Ordem = 5
                         },
@@ -385,9 +385,16 @@ namespace ElaArquitetura.Infrastructure.Migrations
                         },
                         new
                         {
+                            Id = new Guid("00000000-0000-0000-0000-000000000206"),
+                            EtapaId = new Guid("00000000-0000-0000-0000-000000000003"),
+                            Nome = "Maquete 3D",
+                            Ordem = 1
+                        },
+                        new
+                        {
                             Id = new Guid("00000000-0000-0000-0000-000000000201"),
                             EtapaId = new Guid("00000000-0000-0000-0000-000000000004"),
-                            Nome = "Executivo de Obra",
+                            Nome = "Projeto Executivo",
                             Ordem = 1
                         },
                         new
@@ -401,36 +408,29 @@ namespace ElaArquitetura.Infrastructure.Migrations
                         {
                             Id = new Guid("00000000-0000-0000-0000-000000000203"),
                             EtapaId = new Guid("00000000-0000-0000-0000-000000000004"),
-                            Nome = "Detalhamento de Marmoraria",
+                            Nome = "Detalhamento de Pedras e Bancadas",
                             Ordem = 3
                         },
                         new
                         {
                             Id = new Guid("00000000-0000-0000-0000-000000000204"),
                             EtapaId = new Guid("00000000-0000-0000-0000-000000000004"),
-                            Nome = "Memoriais Descritivos",
+                            Nome = "Memorial Descritivo",
                             Ordem = 4
                         },
                         new
                         {
                             Id = new Guid("00000000-0000-0000-0000-000000000205"),
                             EtapaId = new Guid("00000000-0000-0000-0000-000000000004"),
-                            Nome = "Imagens",
+                            Nome = "Apresentação 3D",
                             Ordem = 5
                         },
                         new
                         {
-                            Id = new Guid("00000000-0000-0000-0000-000000000206"),
-                            EtapaId = new Guid("00000000-0000-0000-0000-000000000004"),
-                            Nome = "Maquete 3D",
-                            Ordem = 6
-                        },
-                        new
-                        {
-                            Id = new Guid("00000000-0000-0000-0000-000000000207"),
-                            EtapaId = new Guid("00000000-0000-0000-0000-000000000004"),
-                            Nome = "Render",
-                            Ordem = 7
+                            Id = new Guid("00000000-0000-0000-0000-000000000501"),
+                            EtapaId = new Guid("00000000-0000-0000-0000-000000000005"),
+                            Nome = "Relatório de Obra",
+                            Ordem = 1
                         });
                 });
 
