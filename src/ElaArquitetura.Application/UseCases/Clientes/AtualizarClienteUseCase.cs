@@ -10,7 +10,8 @@ public sealed record AtualizarClienteInput(
     string? Email,
     string? Endereco,
     string? Cpf,
-    string? PontoReferencia);
+    string? PontoReferencia,
+    string? EnderecoObra = null);
 
 public sealed class AtualizarClienteUseCase
 {
@@ -24,7 +25,7 @@ public sealed class AtualizarClienteUseCase
         if (cliente is null)
             return UseCaseResult<ClienteOutput>.Falha(new[] { "Cliente não encontrado." });
 
-        cliente.Atualizar(input.Nome, input.Telefone, input.Email, input.Endereco, input.Cpf, input.PontoReferencia);
+        cliente.Atualizar(input.Nome, input.Telefone, input.Email, input.Endereco, input.Cpf, input.PontoReferencia, input.EnderecoObra);
         if (!cliente.IsValid)
             return UseCaseResult<ClienteOutput>.Falha(cliente.Notifications.Select(n => n.Mensagem));
 

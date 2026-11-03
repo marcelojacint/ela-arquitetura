@@ -10,6 +10,7 @@ public sealed record ClienteOutput(
     string? Endereco,
     string? Cpf,
     string? PontoReferencia,
+    string? EnderecoObra,
     DateTime DataCadastro,
     bool Ativo)
 {
@@ -22,6 +23,7 @@ public sealed record ClienteOutput(
             cliente.Endereco,
             cliente.Cpf,
             cliente.PontoReferencia,
+            cliente.EnderecoObra,
             cliente.DataCadastro,
             cliente.Ativo);
 }
