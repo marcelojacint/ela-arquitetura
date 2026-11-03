@@ -34,6 +34,11 @@ public sealed class CriarProjetoUseCase
 
         var etapaInicial = await _etapaRepository.ObterPrimeiraEtapaAsync(cancellationToken);
 
+        // A primeira etapa ("Cadastro do Cliente") é opcional e já está cumprida, porque o projeto
+        // nasce de um cliente cadastrado; então ele começa direto na etapa seguinte.
+        if (etapaInicial.Opcional)
+            etapaInicial = await _etapaRepository.ObterProximaEtapaAsync(etapaInicial, cancellationToken) ?? etapaInicial;
+
         var projeto = Projeto.Criar(cliente.Id, input.Titulo, etapaInicial);
         if (!projeto.IsValid)
             return UseCaseResult<ProjetoOutput>.Falha(projeto.Notifications.Select(n => n.Mensagem));
