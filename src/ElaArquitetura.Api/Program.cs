@@ -67,6 +67,7 @@ builder.Services.AddScoped<RemoverFuncionarioDoProjetoUseCase>();
 builder.Services.AddScoped<ConcluirChecklistItemUseCase>();
 builder.Services.AddScoped<ReabrirChecklistItemUseCase>();
 builder.Services.AddScoped<ListarChecklistDaEtapaAtualUseCase>();
+builder.Services.AddScoped<ListarChecklistCompletaUseCase>();
 builder.Services.AddScoped<CriarChecklistItemUseCase>();
 builder.Services.AddScoped<ProvisionadorChecklist>();
 

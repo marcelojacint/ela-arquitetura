@@ -14,6 +14,11 @@ public class ChecklistItemRepository : IChecklistItemRepository
     public Task<ChecklistItem?> ObterPorIdAsync(Guid id, CancellationToken cancellationToken)
         => _context.ChecklistItens.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
 
+    public async Task<IReadOnlyCollection<ChecklistItem>> ListarPorProjetoAsync(Guid projetoId, CancellationToken cancellationToken)
+        => await _context.ChecklistItens
+            .Where(c => c.ProjetoId == projetoId)
+            .ToListAsync(cancellationToken);
+
     public async Task<IReadOnlyCollection<ChecklistItem>> ListarPorProjetoEEtapaAsync(Guid projetoId, Guid etapaId, CancellationToken cancellationToken)
         => await _context.ChecklistItens
             .Where(c => c.ProjetoId == projetoId && c.EtapaId == etapaId)

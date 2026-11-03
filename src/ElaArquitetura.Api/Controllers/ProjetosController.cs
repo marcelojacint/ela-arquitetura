@@ -21,6 +21,7 @@ public class ProjetosController : ControllerBase
     private readonly AtribuirFuncionarioAoProjetoUseCase _atribuirFuncionarioAoProjetoUseCase;
     private readonly RemoverFuncionarioDoProjetoUseCase _removerFuncionarioDoProjetoUseCase;
     private readonly ListarChecklistDaEtapaAtualUseCase _listarChecklistDaEtapaAtualUseCase;
+    private readonly ListarChecklistCompletaUseCase _listarChecklistCompletaUseCase;
     private readonly CriarChecklistItemUseCase _criarChecklistItemUseCase;
     private readonly RegistrarEntregaUseCase _registrarEntregaUseCase;
 
@@ -34,6 +35,7 @@ public class ProjetosController : ControllerBase
         AtribuirFuncionarioAoProjetoUseCase atribuirFuncionarioAoProjetoUseCase,
         RemoverFuncionarioDoProjetoUseCase removerFuncionarioDoProjetoUseCase,
         ListarChecklistDaEtapaAtualUseCase listarChecklistDaEtapaAtualUseCase,
+        ListarChecklistCompletaUseCase listarChecklistCompletaUseCase,
         CriarChecklistItemUseCase criarChecklistItemUseCase,
         RegistrarEntregaUseCase registrarEntregaUseCase)
     {
@@ -46,6 +48,7 @@ public class ProjetosController : ControllerBase
         _atribuirFuncionarioAoProjetoUseCase = atribuirFuncionarioAoProjetoUseCase;
         _removerFuncionarioDoProjetoUseCase = removerFuncionarioDoProjetoUseCase;
         _listarChecklistDaEtapaAtualUseCase = listarChecklistDaEtapaAtualUseCase;
+        _listarChecklistCompletaUseCase = listarChecklistCompletaUseCase;
         _criarChecklistItemUseCase = criarChecklistItemUseCase;
         _registrarEntregaUseCase = registrarEntregaUseCase;
     }
@@ -133,6 +136,17 @@ public class ProjetosController : ControllerBase
     public async Task<IActionResult> ObterChecklist(Guid id, CancellationToken cancellationToken)
     {
         var resultado = await _listarChecklistDaEtapaAtualUseCase.ExecutarAsync(id, cancellationToken);
+
+        if (!resultado.Sucesso)
+            return NotFound(new { erros = resultado.Erros });
+
+        return Ok(resultado.Dados);
+    }
+
+    [HttpGet("{id:guid}/checklist/completa")]
+    public async Task<IActionResult> ListarChecklistCompleta(Guid id, CancellationToken cancellationToken)
+    {
+        var resultado = await _listarChecklistCompletaUseCase.ExecutarAsync(id, cancellationToken);
 
         if (!resultado.Sucesso)
             return NotFound(new { erros = resultado.Erros });
