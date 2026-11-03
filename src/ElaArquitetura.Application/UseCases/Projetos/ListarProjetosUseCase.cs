@@ -3,7 +3,7 @@ using ElaArquitetura.Domain.Enums;
 
 namespace ElaArquitetura.Application.UseCases.Projetos;
 
-public sealed record ListarProjetosInput(StatusProjeto? Status, Guid? EtapaId);
+public sealed record ListarProjetosInput(StatusProjeto? Status, Guid? EtapaId, Guid? ClienteId = null);
 
 public sealed class ListarProjetosUseCase
 {
@@ -18,7 +18,7 @@ public sealed class ListarProjetosUseCase
 
     public async Task<IReadOnlyCollection<ProjetoOutput>> ExecutarAsync(ListarProjetosInput input, CancellationToken cancellationToken)
     {
-        var projetos = await _projetoRepository.ListarAsync(input.Status, input.EtapaId, cancellationToken);
+        var projetos = await _projetoRepository.ListarAsync(input.Status, input.EtapaId, input.ClienteId, cancellationToken);
         var etapas = await _etapaRepository.ListarTodasAsync(cancellationToken);
 
         return projetos.Select(projeto => ProjetoOutput.DeProjeto(projeto, etapas)).ToList();

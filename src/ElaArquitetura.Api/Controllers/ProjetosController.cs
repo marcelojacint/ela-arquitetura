@@ -68,9 +68,9 @@ public class ProjetosController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> Listar([FromQuery] StatusProjeto? status, [FromQuery] Guid? etapaId, CancellationToken cancellationToken)
+    public async Task<IActionResult> Listar([FromQuery] StatusProjeto? status, [FromQuery] Guid? etapaId, [FromQuery] Guid? clienteId, CancellationToken cancellationToken)
     {
-        var projetos = await _listarProjetosUseCase.ExecutarAsync(new ListarProjetosInput(status, etapaId), cancellationToken);
+        var projetos = await _listarProjetosUseCase.ExecutarAsync(new ListarProjetosInput(status, etapaId, clienteId), cancellationToken);
         return Ok(projetos);
     }
 

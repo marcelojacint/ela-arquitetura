@@ -15,7 +15,7 @@ public class ProjetoRepository : IProjetoRepository
     public Task<Projeto?> ObterPorIdAsync(Guid id, CancellationToken cancellationToken)
         => _context.Projetos.FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
 
-    public async Task<IReadOnlyCollection<Projeto>> ListarAsync(StatusProjeto? status, Guid? etapaId, CancellationToken cancellationToken)
+    public async Task<IReadOnlyCollection<Projeto>> ListarAsync(StatusProjeto? status, Guid? etapaId, Guid? clienteId, CancellationToken cancellationToken)
     {
         var query = _context.Projetos.AsQueryable();
 
@@ -24,6 +24,9 @@ public class ProjetoRepository : IProjetoRepository
 
         if (etapaId is not null)
             query = query.Where(p => p.EtapaAtualId == etapaId);
+
+        if (clienteId is not null)
+            query = query.Where(p => p.ClienteId == clienteId);
 
         return await query.OrderByDescending(p => p.DataInicio).ToListAsync(cancellationToken);
     }
