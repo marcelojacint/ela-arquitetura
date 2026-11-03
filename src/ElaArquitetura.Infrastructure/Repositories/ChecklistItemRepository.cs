@@ -35,4 +35,10 @@ public class ChecklistItemRepository : IChecklistItemRepository
         _context.ChecklistItens.Update(item);
         await _context.SaveChangesAsync(cancellationToken);
     }
+
+    public async Task RemoverAsync(ChecklistItem item, CancellationToken cancellationToken)
+    {
+        _context.ChecklistItens.Remove(item);
+        await _context.SaveChangesAsync(cancellationToken);
+    }
 }

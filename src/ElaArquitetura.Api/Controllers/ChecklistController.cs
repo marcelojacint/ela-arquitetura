@@ -13,13 +13,16 @@ public class ChecklistController : ControllerBase
 {
     private readonly ConcluirChecklistItemUseCase _concluirChecklistItemUseCase;
     private readonly ReabrirChecklistItemUseCase _reabrirChecklistItemUseCase;
+    private readonly RemoverChecklistItemUseCase _removerChecklistItemUseCase;
 
     public ChecklistController(
         ConcluirChecklistItemUseCase concluirChecklistItemUseCase,
-        ReabrirChecklistItemUseCase reabrirChecklistItemUseCase)
+        ReabrirChecklistItemUseCase reabrirChecklistItemUseCase,
+        RemoverChecklistItemUseCase removerChecklistItemUseCase)
     {
         _concluirChecklistItemUseCase = concluirChecklistItemUseCase;
         _reabrirChecklistItemUseCase = reabrirChecklistItemUseCase;
+        _removerChecklistItemUseCase = removerChecklistItemUseCase;
     }
 
     [HttpPatch("{itemId:guid}/concluir")]
@@ -40,6 +43,17 @@ public class ChecklistController : ControllerBase
     public async Task<IActionResult> Reabrir(Guid itemId, CancellationToken cancellationToken)
     {
         var resultado = await _reabrirChecklistItemUseCase.ExecutarAsync(new ReabrirChecklistItemInput(itemId), cancellationToken);
+
+        if (!resultado.Sucesso)
+            return BadRequest(new { erros = resultado.Erros });
+
+        return Ok(resultado.Dados);
+    }
+
+    [HttpDelete("{itemId:guid}")]
+    public async Task<IActionResult> Remover(Guid itemId, CancellationToken cancellationToken)
+    {
+        var resultado = await _removerChecklistItemUseCase.ExecutarAsync(new RemoverChecklistItemInput(itemId), cancellationToken);
 
         if (!resultado.Sucesso)
             return BadRequest(new { erros = resultado.Erros });
