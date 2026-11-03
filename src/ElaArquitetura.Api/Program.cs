@@ -72,6 +72,7 @@ builder.Services.AddScoped<CriarChecklistItemUseCase>();
 builder.Services.AddScoped<ProvisionadorChecklist>();
 
 builder.Services.AddScoped<RegistrarEntregaUseCase>();
+builder.Services.AddScoped<ListarEntregasDoProjetoUseCase>();
 
 builder.Services.AddScoped<ListarEtapasUseCase>();
 

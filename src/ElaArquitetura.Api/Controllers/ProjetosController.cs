@@ -24,6 +24,7 @@ public class ProjetosController : ControllerBase
     private readonly ListarChecklistCompletaUseCase _listarChecklistCompletaUseCase;
     private readonly CriarChecklistItemUseCase _criarChecklistItemUseCase;
     private readonly RegistrarEntregaUseCase _registrarEntregaUseCase;
+    private readonly ListarEntregasDoProjetoUseCase _listarEntregasDoProjetoUseCase;
 
     public ProjetosController(
         CriarProjetoUseCase criarProjetoUseCase,
@@ -37,7 +38,8 @@ public class ProjetosController : ControllerBase
         ListarChecklistDaEtapaAtualUseCase listarChecklistDaEtapaAtualUseCase,
         ListarChecklistCompletaUseCase listarChecklistCompletaUseCase,
         CriarChecklistItemUseCase criarChecklistItemUseCase,
-        RegistrarEntregaUseCase registrarEntregaUseCase)
+        RegistrarEntregaUseCase registrarEntregaUseCase,
+        ListarEntregasDoProjetoUseCase listarEntregasDoProjetoUseCase)
     {
         _criarProjetoUseCase = criarProjetoUseCase;
         _listarProjetosUseCase = listarProjetosUseCase;
@@ -51,6 +53,7 @@ public class ProjetosController : ControllerBase
         _listarChecklistCompletaUseCase = listarChecklistCompletaUseCase;
         _criarChecklistItemUseCase = criarChecklistItemUseCase;
         _registrarEntregaUseCase = registrarEntregaUseCase;
+        _listarEntregasDoProjetoUseCase = listarEntregasDoProjetoUseCase;
     }
 
     public sealed record CriarProjetoRequest(Guid ClienteId, string Titulo);
@@ -162,6 +165,17 @@ public class ProjetosController : ControllerBase
 
         if (!resultado.Sucesso)
             return BadRequest(new { erros = resultado.Erros });
+
+        return Ok(resultado.Dados);
+    }
+
+    [HttpGet("{id:guid}/entregas")]
+    public async Task<IActionResult> ListarEntregas(Guid id, CancellationToken cancellationToken)
+    {
+        var resultado = await _listarEntregasDoProjetoUseCase.ExecutarAsync(id, cancellationToken);
+
+        if (!resultado.Sucesso)
+            return NotFound(new { erros = resultado.Erros });
 
         return Ok(resultado.Dados);
     }
