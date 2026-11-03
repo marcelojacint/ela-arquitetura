@@ -86,6 +86,10 @@ namespace ElaArquitetura.Infrastructure.Migrations
                         .HasMaxLength(300)
                         .HasColumnType("character varying(300)");
 
+                    b.Property<string>("EnderecoObra")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
                     b.Property<string>("Nome")
                         .IsRequired()
                         .HasMaxLength(200)

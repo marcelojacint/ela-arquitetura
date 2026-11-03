@@ -16,6 +16,7 @@ public class ClienteConfiguration : IEntityTypeConfiguration<Cliente>
         builder.Property(c => c.Endereco).HasMaxLength(300);
         builder.Property(c => c.Cpf).HasMaxLength(14);
         builder.Property(c => c.PontoReferencia).HasMaxLength(300);
+        builder.Property(c => c.EnderecoObra).HasMaxLength(300);
         builder.Property(c => c.DataCadastro).IsRequired();
         builder.Property(c => c.Ativo).IsRequired();
 
