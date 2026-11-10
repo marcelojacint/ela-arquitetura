@@ -2,6 +2,7 @@ using ElaArquitetura.Application.Interfaces.Repositories;
 
 namespace ElaArquitetura.Application.UseCases.Funcionarios;
 
+/// <summary>Funcionários do escritório exibidos no app: ativos e sem a usuária do sistema.</summary>
 public sealed class ListarFuncionariosUseCase
 {
     private readonly IFuncionarioRepository _funcionarioRepository;
@@ -10,7 +11,7 @@ public sealed class ListarFuncionariosUseCase
 
     public async Task<IReadOnlyCollection<FuncionarioOutput>> ExecutarAsync(CancellationToken cancellationToken)
     {
-        var funcionarios = await _funcionarioRepository.ListarAsync(cancellationToken);
+        var funcionarios = await _funcionarioRepository.ListarCadastradosAsync(cancellationToken);
         return funcionarios.Select(FuncionarioOutput.DeFuncionario).ToList();
     }
 }

@@ -1,38 +1,27 @@
 using ElaArquitetura.Application.Common;
-using ElaArquitetura.Application.Interfaces.Auth;
 using ElaArquitetura.Application.Interfaces.Repositories;
 using ElaArquitetura.Domain.Entities;
 
 namespace ElaArquitetura.Application.UseCases.Funcionarios;
 
-public sealed record CriarFuncionarioInput(string Nome, string Email, string Cargo, string Senha, string? Telefone);
+public sealed record CriarFuncionarioInput(string Nome, string Email, string? Telefone, DateOnly? DataNascimento);
 
+/// <summary>Cadastra um funcionário do escritório, só para consulta (não ganha acesso ao sistema).</summary>
 public sealed class CriarFuncionarioUseCase
 {
-    private const int SenhaMinima = 8;
-
     private readonly IFuncionarioRepository _funcionarioRepository;
-    private readonly IPasswordHasher _passwordHasher;
 
-    public CriarFuncionarioUseCase(IFuncionarioRepository funcionarioRepository, IPasswordHasher passwordHasher)
-    {
-        _funcionarioRepository = funcionarioRepository;
-        _passwordHasher = passwordHasher;
-    }
+    public CriarFuncionarioUseCase(IFuncionarioRepository funcionarioRepository) => _funcionarioRepository = funcionarioRepository;
 
     public async Task<UseCaseResult<FuncionarioOutput>> ExecutarAsync(CriarFuncionarioInput input, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(input.Senha) || input.Senha.Length < SenhaMinima)
-            return UseCaseResult<FuncionarioOutput>.Falha(new[] { $"Senha deve ter ao menos {SenhaMinima} caracteres." });
-
-        var existente = await _funcionarioRepository.ObterPorEmailAsync(input.Email, cancellationToken);
-        if (existente is not null)
-            return UseCaseResult<FuncionarioOutput>.Falha(new[] { "Já existe um funcionário cadastrado com esse email." });
-
-        var senhaHash = _passwordHasher.Hash(input.Senha);
-        var funcionario = Funcionario.Criar(input.Nome, input.Email, input.Cargo, senhaHash, input.Telefone);
+        var funcionario = Funcionario.Cadastrar(input.Nome, input.Email, input.Telefone, input.DataNascimento);
         if (!funcionario.IsValid)
             return UseCaseResult<FuncionarioOutput>.Falha(funcionario.Notifications.Select(n => n.Mensagem));
+
+        var existente = await _funcionarioRepository.ObterPorEmailAsync(funcionario.Email, cancellationToken);
+        if (existente is not null)
+            return UseCaseResult<FuncionarioOutput>.Falha(new[] { "Já existe um funcionário cadastrado com esse email." });
 
         await _funcionarioRepository.AdicionarAsync(funcionario, cancellationToken);
 

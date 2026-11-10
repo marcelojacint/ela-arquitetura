@@ -29,14 +29,14 @@ public class FuncionariosController : ControllerBase
         _desativarFuncionarioUseCase = desativarFuncionarioUseCase;
     }
 
-    public sealed record CriarFuncionarioRequest(string Nome, string Email, string Cargo, string Senha, string? Telefone);
-    public sealed record AtualizarFuncionarioRequest(string Nome, string Email, string Cargo, string? Telefone);
+    public sealed record CriarFuncionarioRequest(string Nome, string Email, string? Telefone, DateOnly? DataNascimento);
+    public sealed record AtualizarFuncionarioRequest(string Nome, string Email, string? Telefone, DateOnly? DataNascimento);
 
     [HttpPost]
     public async Task<IActionResult> Criar(CriarFuncionarioRequest request, CancellationToken cancellationToken)
     {
         var resultado = await _criarFuncionarioUseCase.ExecutarAsync(
-            new CriarFuncionarioInput(request.Nome, request.Email, request.Cargo, request.Senha, request.Telefone), cancellationToken);
+            new CriarFuncionarioInput(request.Nome, request.Email, request.Telefone, request.DataNascimento), cancellationToken);
 
         if (!resultado.Sucesso)
             return BadRequest(new { erros = resultado.Erros });
@@ -62,10 +62,14 @@ public class FuncionariosController : ControllerBase
     public async Task<IActionResult> Atualizar(Guid id, AtualizarFuncionarioRequest request, CancellationToken cancellationToken)
     {
         var resultado = await _atualizarFuncionarioUseCase.ExecutarAsync(
-            new AtualizarFuncionarioInput(id, request.Nome, request.Email, request.Cargo, request.Telefone), cancellationToken);
+            new AtualizarFuncionarioInput(id, request.Nome, request.Email, request.Telefone, request.DataNascimento), cancellationToken);
 
         if (!resultado.Sucesso)
-            return BadRequest(new { erros = resultado.Erros });
+        {
+            return resultado.Erros.Contains(AtualizarFuncionarioUseCase.ErroNaoEncontrado)
+                ? NotFound(new { erros = resultado.Erros })
+                : BadRequest(new { erros = resultado.Erros });
+        }
 
         return Ok(resultado.Dados);
     }
@@ -76,7 +80,11 @@ public class FuncionariosController : ControllerBase
         var resultado = await _desativarFuncionarioUseCase.ExecutarAsync(new DesativarFuncionarioInput(id), cancellationToken);
 
         if (!resultado.Sucesso)
-            return NotFound(new { erros = resultado.Erros });
+        {
+            return resultado.Erros.Contains(DesativarFuncionarioUseCase.ErroNaoEncontrado)
+                ? NotFound(new { erros = resultado.Erros })
+                : BadRequest(new { erros = resultado.Erros });
+        }
 
         return NoContent();
     }

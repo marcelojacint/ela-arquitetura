@@ -29,7 +29,7 @@ public sealed class AtribuirFuncionarioAoProjetoUseCase
             return UseCaseResult<bool>.Falha(new[] { "Projeto não encontrado." });
 
         var funcionario = await _funcionarioRepository.ObterPorIdAsync(input.FuncionarioId, cancellationToken);
-        if (funcionario is null)
+        if (funcionario is null || !funcionario.Ativo)
             return UseCaseResult<bool>.Falha(new[] { "Funcionário não encontrado." });
 
         var existente = await _projetoFuncionarioRepository.ObterAsync(input.ProjetoId, input.FuncionarioId, cancellationToken);

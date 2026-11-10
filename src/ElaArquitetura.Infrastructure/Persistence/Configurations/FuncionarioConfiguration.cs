@@ -13,8 +13,9 @@ public class FuncionarioConfiguration : IEntityTypeConfiguration<Funcionario>
 
         builder.Property(f => f.Nome).HasMaxLength(200).IsRequired();
         builder.Property(f => f.Email).HasMaxLength(200).IsRequired();
-        builder.Property(f => f.Cargo).HasMaxLength(100).IsRequired();
-        builder.Property(f => f.SenhaHash).IsRequired();
+        builder.Property(f => f.Cargo).HasMaxLength(100);
+        builder.Property(f => f.SenhaHash);
+        builder.Property(f => f.DataNascimento);
         builder.Property(f => f.Ativo).IsRequired();
 
         builder.OwnsOne(f => f.Telefone, telefone =>
@@ -24,6 +25,7 @@ public class FuncionarioConfiguration : IEntityTypeConfiguration<Funcionario>
                 .HasMaxLength(20);
         });
 
-        builder.HasIndex(f => f.Email).IsUnique();
+        // Único só entre os ativos: um funcionário excluído (desativado) libera o e-mail.
+        builder.HasIndex(f => f.Email).IsUnique().HasFilter("\"Ativo\" = true");
     }
 }
