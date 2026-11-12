@@ -1,29 +1,27 @@
 using ElaArquitetura.Application.Common;
 using ElaArquitetura.Application.Interfaces.Repositories;
-using ElaArquitetura.Application.UseCases.Checklist;
-using ElaArquitetura.Domain.Entities;
 
 namespace ElaArquitetura.Application.UseCases.Projetos;
 
-public sealed record CriarProjetoInput(Guid ClienteId, string Titulo);
+public sealed record CriarProjetoInput(Guid ClienteId, string Titulo, string? EnderecoObra = null, Guid? FuncionarioResponsavelId = null);
 
+/// <summary>
+/// Projeto adicional para um cliente. O primeiro projeto já é aberto no cadastro do cliente.
+/// </summary>
 public sealed class CriarProjetoUseCase
 {
-    private readonly IProjetoRepository _projetoRepository;
     private readonly IClienteRepository _clienteRepository;
     private readonly IEtapaRepository _etapaRepository;
-    private readonly ProvisionadorChecklist _provisionadorChecklist;
+    private readonly AberturaDeProjeto _aberturaDeProjeto;
 
     public CriarProjetoUseCase(
-        IProjetoRepository projetoRepository,
         IClienteRepository clienteRepository,
         IEtapaRepository etapaRepository,
-        ProvisionadorChecklist provisionadorChecklist)
+        AberturaDeProjeto aberturaDeProjeto)
     {
-        _projetoRepository = projetoRepository;
         _clienteRepository = clienteRepository;
         _etapaRepository = etapaRepository;
-        _provisionadorChecklist = provisionadorChecklist;
+        _aberturaDeProjeto = aberturaDeProjeto;
     }
 
     public async Task<UseCaseResult<ProjetoOutput>> ExecutarAsync(CriarProjetoInput input, CancellationToken cancellationToken)
@@ -32,19 +30,11 @@ public sealed class CriarProjetoUseCase
         if (cliente is null)
             return UseCaseResult<ProjetoOutput>.Falha(new[] { "Cliente não encontrado." });
 
-        var etapaInicial = await _etapaRepository.ObterPrimeiraEtapaAsync(cancellationToken);
-
-        // A primeira etapa ("Cadastro do Cliente") é opcional e já está cumprida, porque o projeto
-        // nasce de um cliente cadastrado; então ele começa direto na etapa seguinte.
-        if (etapaInicial.Opcional)
-            etapaInicial = await _etapaRepository.ObterProximaEtapaAsync(etapaInicial, cancellationToken) ?? etapaInicial;
-
-        var projeto = Projeto.Criar(cliente.Id, input.Titulo, etapaInicial);
-        if (!projeto.IsValid)
-            return UseCaseResult<ProjetoOutput>.Falha(projeto.Notifications.Select(n => n.Mensagem));
-
-        await _projetoRepository.AdicionarAsync(projeto, cancellationToken);
-        await _provisionadorChecklist.ProvisionarAsync(projeto.Id, etapaInicial.Id, cancellationToken);
+        var abertura = await _aberturaDeProjeto.AbrirAsync(
+            new DadosDoProjeto(cliente.Id, input.Titulo, input.EnderecoObra, input.FuncionarioResponsavelId), cancellationToken);
+        if (!abertura.Sucesso)
+            return UseCaseResult<ProjetoOutput>.Falha(abertura.Erros);
+        var projeto = abertura.Dados!;
 
         var etapas = await _etapaRepository.ListarTodasAsync(cancellationToken);
 

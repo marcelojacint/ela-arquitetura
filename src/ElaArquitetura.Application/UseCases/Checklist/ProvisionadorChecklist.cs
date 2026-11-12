@@ -3,6 +3,11 @@ using ElaArquitetura.Domain.Entities;
 
 namespace ElaArquitetura.Application.UseCases.Checklist;
 
+/// <summary>
+/// Cria os itens do checklist a partir das sub-etapas de todas as etapas do fluxo.
+/// O projeto já nasce com o checklist completo, para que o card do cliente abra com tudo pronto.
+/// É idempotente: sub-etapas que já têm item no projeto são ignoradas.
+/// </summary>
 public sealed class ProvisionadorChecklist
 {
     private readonly ISubEtapaRepository _subEtapaRepository;
@@ -14,29 +19,24 @@ public sealed class ProvisionadorChecklist
         _checklistItemRepository = checklistItemRepository;
     }
 
-    public async Task ProvisionarAsync(Guid projetoId, Guid etapaId, CancellationToken cancellationToken)
+    public async Task ProvisionarAsync(Guid projetoId, CancellationToken cancellationToken)
     {
-        var subEtapasDaEtapa = (await _subEtapaRepository.ListarTodasAsync(cancellationToken))
-            .Where(subEtapa => subEtapa.EtapaId == etapaId)
-            .OrderBy(subEtapa => subEtapa.Ordem)
-            .ToList();
-
-        if (subEtapasDaEtapa.Count == 0)
+        var subEtapas = await _subEtapaRepository.ListarTodasAsync(cancellationToken);
+        if (subEtapas.Count == 0)
             return;
 
-        var itensExistentes = await _checklistItemRepository.ListarPorProjetoEEtapaAsync(projetoId, etapaId, cancellationToken);
-        var subEtapasJaProvisionadas = itensExistentes
+        var subEtapasJaProvisionadas = (await _checklistItemRepository.ListarPorProjetoAsync(projetoId, cancellationToken))
             .Where(item => item.SubEtapaId.HasValue)
             .Select(item => item.SubEtapaId!.Value)
             .ToHashSet();
 
-        foreach (var subEtapa in subEtapasDaEtapa)
-        {
-            if (subEtapasJaProvisionadas.Contains(subEtapa.Id))
-                continue;
+        var novosItens = subEtapas
+            .Where(subEtapa => !subEtapasJaProvisionadas.Contains(subEtapa.Id))
+            .OrderBy(subEtapa => subEtapa.Ordem)
+            .Select(subEtapa => new ChecklistItem(projetoId, subEtapa.EtapaId, subEtapa.Nome, subEtapa.Id))
+            .ToList();
 
-            await _checklistItemRepository.AdicionarAsync(
-                new ChecklistItem(projetoId, etapaId, subEtapa.Nome, subEtapa.Id), cancellationToken);
-        }
+        if (novosItens.Count > 0)
+            await _checklistItemRepository.AdicionarVariosAsync(novosItens, cancellationToken);
     }
 }

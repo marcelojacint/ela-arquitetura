@@ -23,7 +23,7 @@ public class ProjetosFluxoCompletoTests
         var client = await TestAuth.ComoAdminAsync(_factory.CreateClient());
 
         var cliente = await CriarClienteAsync(client);
-        var projeto = await CriarProjetoAsync(client, cliente.Id);
+        var projeto = await ObterProjetoDoClienteAsync(client, cliente.Id);
 
         // "Cadastro do Cliente" é opcional e já está cumprida: o projeto nasce em Estudos Preliminares.
         Assert.Equal(20, projeto.PercentualConcluido);
@@ -90,7 +90,7 @@ public class ProjetosFluxoCompletoTests
     {
         var client = await TestAuth.ComoAdminAsync(_factory.CreateClient());
         var cliente = await CriarClienteAsync(client);
-        var projeto = await CriarProjetoAsync(client, cliente.Id);
+        var projeto = await ObterProjetoDoClienteAsync(client, cliente.Id);
 
         for (var i = 0; i < 2; i++)
         {
@@ -104,11 +104,246 @@ public class ProjetosFluxoCompletoTests
     }
 
     [Fact]
+    public async Task Cadastro_do_cliente_ja_abre_o_projeto_com_o_checklist_de_todas_as_etapas()
+    {
+        var client = await TestAuth.ComoAdminAsync(_factory.CreateClient());
+        var cliente = await CriarClienteAsync(client);
+
+        var projeto = await ObterProjetoDoClienteAsync(client, cliente.Id);
+        Assert.Equal(StatusProjeto.EmAndamento, projeto.Status);
+
+        var etapas = await ObterChecklistCompletaAsync(client, projeto.Id);
+        Assert.True(etapas.Single(e => e.Nome == "Estudos Preliminares").Atual);
+        Assert.Equal(
+            new[] { "Briefing", "Levantamento em Locação", "Estudo de Layout" },
+            etapas.Single(e => e.Nome == "Estudos Preliminares").Itens.Select(i => i.Descricao));
+        Assert.Equal(new[] { "Maquete 3D" }, etapas.Single(e => e.Nome == "Anteprojeto").Itens.Select(i => i.Descricao));
+        Assert.Equal(5, etapas.Single(e => e.Nome == "Projeto Executivo").Itens.Count);
+        Assert.Equal(new[] { "Relatório de Obra" }, etapas.Single(e => e.Nome == "Acompanhamentos").Itens.Select(i => i.Descricao));
+
+        // Toda sub-etapa vira exatamente um item.
+        var todasSubEtapas = etapas.SelectMany(e => e.SubEtapas).Select(s => s.Id).OrderBy(id => id);
+        var subEtapasDosItens = etapas.SelectMany(e => e.Itens).Select(i => i.SubEtapaId!.Value).OrderBy(id => id);
+        Assert.Equal(todasSubEtapas, subEtapasDosItens);
+    }
+
+    [Fact]
+    public async Task Item_personalizado_pode_ser_adicionado_e_removido_em_etapa_futura()
+    {
+        var client = await TestAuth.ComoAdminAsync(_factory.CreateClient());
+        var cliente = await CriarClienteAsync(client);
+        var projeto = await ObterProjetoDoClienteAsync(client, cliente.Id);
+        var projetoExecutivo = (await ObterChecklistCompletaAsync(client, projeto.Id)).Single(e => e.Nome == "Projeto Executivo");
+
+        var criarResponse = await client.PostAsJsonAsync($"/api/projetos/{projeto.Id}/checklist", new
+        {
+            descricao = "Detalhamento de Iluminação",
+            etapaId = projetoExecutivo.EtapaId
+        });
+        Assert.Equal(HttpStatusCode.OK, criarResponse.StatusCode);
+        var item = await criarResponse.Content.ReadFromJsonAsync<ChecklistItemCriadoOutput>(TestJson.Options);
+        Assert.Equal(projetoExecutivo.EtapaId, item!.EtapaId);
+        Assert.Null(item.SubEtapaId);
+
+        var etapaDepois = (await ObterChecklistCompletaAsync(client, projeto.Id)).Single(e => e.Nome == "Projeto Executivo");
+        Assert.Equal(6, etapaDepois.Itens.Count);
+        Assert.Equal("Detalhamento de Iluminação", etapaDepois.Itens.Last().Descricao);
+
+        var removerResponse = await client.DeleteAsync($"/api/checklist/{item.Id}");
+        Assert.Equal(HttpStatusCode.OK, removerResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task Avancar_etapa_pula_as_etapas_seguintes_que_ja_estao_com_checklist_concluido()
+    {
+        var client = await TestAuth.ComoAdminAsync(_factory.CreateClient());
+        var cliente = await CriarClienteAsync(client);
+        var projeto = await ObterProjetoDoClienteAsync(client, cliente.Id);
+        var etapas = await ObterChecklistCompletaAsync(client, projeto.Id);
+
+        // Anteprojeto concluído antes da hora; depois termina Estudos Preliminares.
+        foreach (var item in etapas.Single(e => e.Nome == "Anteprojeto").Itens)
+            await client.PatchAsync($"/api/checklist/{item.Id}/concluir", null);
+        await ConcluirChecklistDaEtapaAtualAsync(client, projeto.Id);
+
+        var avancarResponse = await client.PatchAsync($"/api/projetos/{projeto.Id}/avancar-etapa", null);
+        Assert.Equal(HttpStatusCode.OK, avancarResponse.StatusCode);
+        var projetoAtualizado = await avancarResponse.Content.ReadFromJsonAsync<ProjetoOutput>(TestJson.Options);
+
+        Assert.Equal(etapas.Single(e => e.Nome == "Projeto Executivo").EtapaId, projetoAtualizado!.EtapaAtualId);
+        Assert.Equal(60, projetoAtualizado.PercentualConcluido);
+    }
+
+    [Fact]
+    public async Task Cliente_pode_ter_um_segundo_projeto_com_checklist_proprio_e_nome_unico()
+    {
+        var client = await TestAuth.ComoAdminAsync(_factory.CreateClient());
+        var cliente = await CriarClienteAsync(client);
+        var primeiro = await ObterProjetoDoClienteAsync(client, cliente.Id);
+        Assert.Equal(cliente.Nome, primeiro.Titulo);
+
+        var segundoResponse = await client.PostAsJsonAsync("/api/projetos", new { clienteId = cliente.Id, titulo = "Casa de Praia" });
+        Assert.Equal(HttpStatusCode.Created, segundoResponse.StatusCode);
+        var segundo = await segundoResponse.Content.ReadFromJsonAsync<ProjetoOutput>(TestJson.Options);
+
+        // Nome repetido no mesmo cliente é recusado (sem diferenciar maiúsculas).
+        var repetidoResponse = await client.PostAsJsonAsync("/api/projetos", new { clienteId = cliente.Id, titulo = "casa de praia" });
+        Assert.Equal(HttpStatusCode.BadRequest, repetidoResponse.StatusCode);
+
+        // Cada projeto tem o próprio checklist: marcar no segundo não mexe no primeiro.
+        var itemDoSegundo = (await ObterChecklistAsync(client, segundo!.Id)).First();
+        await client.PatchAsync($"/api/checklist/{itemDoSegundo.Id}/concluir", null);
+        Assert.All(await ObterChecklistAsync(client, primeiro.Id), item => Assert.False(item.Concluido));
+
+        var projetos = await client.GetFromJsonAsync<List<ProjetoOutput>>($"/api/projetos?clienteId={cliente.Id}", TestJson.Options);
+        Assert.Equal(2, projetos!.Count);
+
+        var clientes = await client.GetFromJsonAsync<List<ClienteOutput>>("/api/clientes", TestJson.Options);
+        Assert.Equal(2, clientes!.Single(c => c.Id == cliente.Id).QuantidadeProjetos);
+    }
+
+    [Fact]
+    public async Task Editar_projeto_troca_nome_endereco_e_responsavel_e_recusa_nome_vazio_ou_repetido()
+    {
+        var client = await TestAuth.ComoAdminAsync(_factory.CreateClient());
+        var cliente = await CriarClienteAsync(client);
+        var primeiro = await ObterProjetoDoClienteAsync(client, cliente.Id);
+        await client.PostAsJsonAsync("/api/projetos", new { clienteId = cliente.Id, titulo = "Casa de Praia" });
+        var funcionaria = await CriarFuncionarioAsync(client);
+
+        var editarResponse = await client.PutAsJsonAsync($"/api/projetos/{primeiro.Id}", new
+        {
+            titulo = "Apartamento Centro",
+            enderecoObra = "Rua das Flores, 10",
+            funcionarioResponsavelId = funcionaria.Id
+        });
+        Assert.Equal(HttpStatusCode.OK, editarResponse.StatusCode);
+        var editado = await editarResponse.Content.ReadFromJsonAsync<ProjetoOutput>(TestJson.Options);
+        Assert.Equal("Apartamento Centro", editado!.Titulo);
+        Assert.Equal("Rua das Flores, 10", editado.EnderecoObra);
+        Assert.Equal(funcionaria.Id, Assert.Single(editado.Funcionarios).FuncionarioId);
+
+        // Sem responsável e sem endereço: o projeto fica sem os dois. Manter o próprio nome não conta como repetido.
+        var limparResponse = await client.PutAsJsonAsync($"/api/projetos/{primeiro.Id}", new
+        {
+            titulo = "Apartamento Centro",
+            enderecoObra = (string?)null,
+            funcionarioResponsavelId = (Guid?)null
+        });
+        Assert.Equal(HttpStatusCode.OK, limparResponse.StatusCode);
+        var limpo = await limparResponse.Content.ReadFromJsonAsync<ProjetoOutput>(TestJson.Options);
+        Assert.Null(limpo!.EnderecoObra);
+        Assert.Empty(limpo.Funcionarios);
+
+        var repetidoResponse = await client.PutAsJsonAsync($"/api/projetos/{primeiro.Id}", new { titulo = "Casa de Praia" });
+        Assert.Equal(HttpStatusCode.BadRequest, repetidoResponse.StatusCode);
+
+        var vazioResponse = await client.PutAsJsonAsync($"/api/projetos/{primeiro.Id}", new { titulo = " " });
+        Assert.Equal(HttpStatusCode.BadRequest, vazioResponse.StatusCode);
+
+        var responsavelInexistenteResponse = await client.PutAsJsonAsync($"/api/projetos/{primeiro.Id}", new
+        {
+            titulo = "Apartamento Centro",
+            funcionarioResponsavelId = Guid.NewGuid()
+        });
+        Assert.Equal(HttpStatusCode.BadRequest, responsavelInexistenteResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task Endereco_da_obra_e_de_cada_projeto_e_nao_passa_para_o_segundo()
+    {
+        var client = await TestAuth.ComoAdminAsync(_factory.CreateClient());
+        var telefone = $"119{Random.Shared.Next(10000000, 99999999)}";
+        var clienteResponse = await client.PostAsJsonAsync("/api/clientes", new
+        {
+            nome = "Cliente Endereco",
+            telefone,
+            enderecoObra = "Rua da Primeira Obra, 1"
+        });
+        var cliente = await clienteResponse.Content.ReadFromJsonAsync<ClienteOutput>(TestJson.Options);
+
+        var primeiro = await ObterProjetoDoClienteAsync(client, cliente!.Id);
+        Assert.Equal("Rua da Primeira Obra, 1", primeiro.EnderecoObra);
+
+        var funcionaria = await CriarFuncionarioAsync(client);
+        var segundoResponse = await client.PostAsJsonAsync("/api/projetos", new
+        {
+            clienteId = cliente.Id,
+            titulo = "Casa de Campo",
+            enderecoObra = "Estrada do Sítio, km 3",
+            funcionarioResponsavelId = funcionaria.Id
+        });
+        var segundo = await segundoResponse.Content.ReadFromJsonAsync<ProjetoOutput>(TestJson.Options);
+        Assert.Equal("Estrada do Sítio, km 3", segundo!.EnderecoObra);
+
+        var semEnderecoResponse = await client.PostAsJsonAsync("/api/projetos", new { clienteId = cliente.Id, titulo = "Escritório" });
+        var semEndereco = await semEnderecoResponse.Content.ReadFromJsonAsync<ProjetoOutput>(TestJson.Options);
+        Assert.Null(semEndereco!.EnderecoObra);
+
+        var segundoConsultado = await client.GetFromJsonAsync<ProjetoOutput>($"/api/projetos/{segundo.Id}", TestJson.Options);
+        Assert.Equal(funcionaria.Id, Assert.Single(segundoConsultado!.Funcionarios).FuncionarioId);
+    }
+
+    [Fact]
+    public async Task Excluir_projeto_remove_ele_e_o_checklist_mas_nao_deixa_excluir_o_unico_projeto()
+    {
+        var client = await TestAuth.ComoAdminAsync(_factory.CreateClient());
+        var cliente = await CriarClienteAsync(client);
+        var primeiro = await ObterProjetoDoClienteAsync(client, cliente.Id);
+
+        var unicoResponse = await client.DeleteAsync($"/api/projetos/{primeiro.Id}");
+        Assert.Equal(HttpStatusCode.BadRequest, unicoResponse.StatusCode);
+
+        var segundoResponse = await client.PostAsJsonAsync("/api/projetos", new { clienteId = cliente.Id, titulo = "Casa de Praia" });
+        var segundo = await segundoResponse.Content.ReadFromJsonAsync<ProjetoOutput>(TestJson.Options);
+        var itemDoSegundo = (await ObterChecklistAsync(client, segundo!.Id)).First();
+        await client.PatchAsync($"/api/checklist/{itemDoSegundo.Id}/concluir", null);
+
+        var excluirResponse = await client.DeleteAsync($"/api/projetos/{segundo.Id}");
+        Assert.Equal(HttpStatusCode.NoContent, excluirResponse.StatusCode);
+
+        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync($"/api/projetos/{segundo.Id}")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await client.DeleteAsync($"/api/projetos/{segundo.Id}")).StatusCode);
+        var restante = await ObterProjetoDoClienteAsync(client, cliente.Id);
+        Assert.Equal(primeiro.Id, restante.Id);
+
+        var clientes = await client.GetFromJsonAsync<List<ClienteOutput>>("/api/clientes", TestJson.Options);
+        Assert.Equal(1, clientes!.Single(c => c.Id == cliente.Id).QuantidadeProjetos);
+    }
+
+    [Fact]
+    public async Task Link_do_drive_pode_ser_definido_trocado_e_removido()
+    {
+        var client = await TestAuth.ComoAdminAsync(_factory.CreateClient());
+        var cliente = await CriarClienteAsync(client);
+        var projeto = await ObterProjetoDoClienteAsync(client, cliente.Id);
+        Assert.Null(projeto.LinkDrive);
+
+        var definirResponse = await client.PutAsJsonAsync($"/api/projetos/{projeto.Id}/link-drive", new { linkDrive = "https://drive.google.com/pasta-1" });
+        Assert.Equal(HttpStatusCode.OK, definirResponse.StatusCode);
+        Assert.Equal("https://drive.google.com/pasta-1", (await definirResponse.Content.ReadFromJsonAsync<ProjetoOutput>(TestJson.Options))!.LinkDrive);
+
+        await client.PutAsJsonAsync($"/api/projetos/{projeto.Id}/link-drive", new { linkDrive = "https://drive.google.com/pasta-2" });
+        var consultado = await client.GetFromJsonAsync<ProjetoOutput>($"/api/projetos/{projeto.Id}", TestJson.Options);
+        Assert.Equal("https://drive.google.com/pasta-2", consultado!.LinkDrive);
+
+        var invalidoResponse = await client.PutAsJsonAsync($"/api/projetos/{projeto.Id}/link-drive", new { linkDrive = "pasta sem link" });
+        Assert.Equal(HttpStatusCode.BadRequest, invalidoResponse.StatusCode);
+
+        var vazioResponse = await client.PutAsJsonAsync($"/api/projetos/{projeto.Id}/link-drive", new { linkDrive = " " });
+        Assert.Equal(HttpStatusCode.BadRequest, vazioResponse.StatusCode);
+
+        var removerResponse = await client.DeleteAsync($"/api/projetos/{projeto.Id}/link-drive");
+        Assert.Equal(HttpStatusCode.OK, removerResponse.StatusCode);
+        Assert.Null((await removerResponse.Content.ReadFromJsonAsync<ProjetoOutput>(TestJson.Options))!.LinkDrive);
+    }
+
+    [Fact]
     public async Task Atribuir_e_remover_funcionario_do_projeto()
     {
         var client = await TestAuth.ComoAdminAsync(_factory.CreateClient());
         var cliente = await CriarClienteAsync(client);
-        var projeto = await CriarProjetoAsync(client, cliente.Id);
+        var projeto = await ObterProjetoDoClienteAsync(client, cliente.Id);
 
         var funcionarioResponse = await client.PostAsJsonAsync("/api/funcionarios", new
         {
@@ -141,11 +376,25 @@ public class ProjetosFluxoCompletoTests
         return (await response.Content.ReadFromJsonAsync<ClienteOutput>(TestJson.Options))!;
     }
 
-    private static async Task<ProjetoOutput> CriarProjetoAsync(HttpClient client, Guid clienteId)
+    private static async Task<FuncionarioOutput> CriarFuncionarioAsync(HttpClient client)
     {
-        var response = await client.PostAsJsonAsync("/api/projetos", new { clienteId, titulo = "Projeto Fluxo Completo" });
-        return (await response.Content.ReadFromJsonAsync<ProjetoOutput>(TestJson.Options))!;
+        var response = await client.PostAsJsonAsync("/api/funcionarios", new
+        {
+            nome = "Funcionaria Responsavel",
+            email = $"resp.{Guid.NewGuid():N}@teste.com"
+        });
+        return (await response.Content.ReadFromJsonAsync<FuncionarioOutput>(TestJson.Options))!;
     }
+
+    /// <summary>O projeto é aberto junto com o cadastro do cliente.</summary>
+    private static async Task<ProjetoOutput> ObterProjetoDoClienteAsync(HttpClient client, Guid clienteId)
+    {
+        var projetos = await client.GetFromJsonAsync<List<ProjetoOutput>>($"/api/projetos?clienteId={clienteId}", TestJson.Options);
+        return Assert.Single(projetos!);
+    }
+
+    private static async Task<List<EtapaDoChecklistOutput>> ObterChecklistCompletaAsync(HttpClient client, Guid projetoId)
+        => (await client.GetFromJsonAsync<List<EtapaDoChecklistOutput>>($"/api/projetos/{projetoId}/checklist/completa", TestJson.Options))!;
 
     private static async Task<List<ChecklistItemDetalheOutput>> ObterChecklistAsync(HttpClient client, Guid projetoId)
     {

@@ -8,6 +8,8 @@ public class Projeto : Notifiable
     public Guid Id { get; private set; }
     public Guid ClienteId { get; private set; }
     public string Titulo { get; private set; } = string.Empty;
+    public string? EnderecoObra { get; private set; }
+    public string? LinkDrive { get; private set; }
     public StatusProjeto Status { get; private set; }
     public DateTime DataInicio { get; private set; }
     public DateTime? DataConclusao { get; private set; }
@@ -17,22 +19,61 @@ public class Projeto : Notifiable
     {
     }
 
-    public static Projeto Criar(Guid clienteId, string titulo, Etapa etapaInicial)
+    public static Projeto Criar(Guid clienteId, string titulo, Etapa etapaInicial, string? enderecoObra = null)
     {
         var projeto = new Projeto
         {
             Id = Guid.NewGuid(),
             ClienteId = clienteId,
-            Titulo = titulo,
+            Titulo = titulo?.Trim() ?? string.Empty,
+            EnderecoObra = TextoOuNulo(enderecoObra),
             Status = StatusProjeto.EmAndamento,
             DataInicio = DateTime.UtcNow,
             EtapaAtualId = etapaInicial.Id
         };
 
-        if (string.IsNullOrWhiteSpace(titulo))
-            projeto.AddNotification(nameof(Titulo), "Título do projeto é obrigatório.");
+        projeto.ValidarTitulo();
 
         return projeto;
+    }
+
+    /// <summary>Dados próprios do projeto: cada projeto do cliente tem o seu nome e o seu endereço de obra.</summary>
+    public void AtualizarDados(string titulo, string? enderecoObra)
+    {
+        Titulo = titulo?.Trim() ?? string.Empty;
+        EnderecoObra = TextoOuNulo(enderecoObra);
+        ValidarTitulo();
+    }
+
+    /// <summary>Pasta do Drive com os arquivos do projeto. Vazio remove o link.</summary>
+    public void DefinirLinkDrive(string? linkDrive)
+    {
+        var link = TextoOuNulo(linkDrive);
+
+        if (link is not null && link.Length > 500)
+        {
+            AddNotification(nameof(LinkDrive), "Link do Drive deve ter no máximo 500 caracteres.");
+            return;
+        }
+
+        if (link is not null
+            && !(Uri.TryCreate(link, UriKind.Absolute, out var uri) && (uri.Scheme == Uri.UriSchemeHttps || uri.Scheme == Uri.UriSchemeHttp)))
+        {
+            AddNotification(nameof(LinkDrive), "Informe um link válido, começando com https://.");
+            return;
+        }
+
+        LinkDrive = link;
+    }
+
+    private static string? TextoOuNulo(string? texto) => string.IsNullOrWhiteSpace(texto) ? null : texto.Trim();
+
+    private void ValidarTitulo()
+    {
+        if (string.IsNullOrWhiteSpace(Titulo))
+            AddNotification(nameof(Titulo), "Título do projeto é obrigatório.");
+        else if (Titulo.Length > 200)
+            AddNotification(nameof(Titulo), "Título do projeto deve ter no máximo 200 caracteres.");
     }
 
     public bool PodeAvancarEtapa(Etapa etapaAtual, IEnumerable<ChecklistItem> checklistDaEtapaAtual)

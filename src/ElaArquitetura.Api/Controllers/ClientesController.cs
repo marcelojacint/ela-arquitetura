@@ -34,7 +34,7 @@ public class ClientesController : ControllerBase
 
     public sealed record CriarClienteRequest(string Nome, string Telefone, string? Email, string? Endereco, string? Cpf, string? PontoReferencia, string? EnderecoObra);
 
-    public sealed record AtualizarClienteRequest(string Nome, string Telefone, string? Email, string? Endereco, string? Cpf, string? PontoReferencia, string? EnderecoObra);
+    public sealed record AtualizarClienteRequest(string Nome, string Telefone, string? Email, string? Endereco, string? Cpf, string? PontoReferencia);
 
     [HttpPost]
     public async Task<IActionResult> Criar(CriarClienteRequest request, CancellationToken cancellationToken)
@@ -67,7 +67,7 @@ public class ClientesController : ControllerBase
     public async Task<IActionResult> Atualizar(Guid id, AtualizarClienteRequest request, CancellationToken cancellationToken)
     {
         var resultado = await _atualizarClienteUseCase.ExecutarAsync(
-            new AtualizarClienteInput(id, request.Nome, request.Telefone, request.Email, request.Endereco, request.Cpf, request.PontoReferencia, request.EnderecoObra),
+            new AtualizarClienteInput(id, request.Nome, request.Telefone, request.Email, request.Endereco, request.Cpf, request.PontoReferencia),
             cancellationToken);
 
         if (!resultado.Sucesso)

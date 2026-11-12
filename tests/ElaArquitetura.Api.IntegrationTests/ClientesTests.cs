@@ -51,6 +51,10 @@ public class ClientesTests
         var obterResponse = await client.GetAsync($"/api/clientes/{cliente.Id}");
         var clienteDesativado = await obterResponse.Content.ReadFromJsonAsync<ClienteOutput>(TestJson.Options);
         Assert.False(clienteDesativado!.Ativo);
+
+        // Cliente excluído some da listagem.
+        var clientes = await client.GetFromJsonAsync<List<ClienteOutput>>("/api/clientes", TestJson.Options);
+        Assert.DoesNotContain(clientes!, c => c.Id == cliente.Id);
     }
 
     [Fact]

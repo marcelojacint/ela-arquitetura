@@ -10,11 +10,11 @@ public sealed record ClienteOutput(
     string? Endereco,
     string? Cpf,
     string? PontoReferencia,
-    string? EnderecoObra,
     DateTime DataCadastro,
-    bool Ativo)
+    bool Ativo,
+    int QuantidadeProjetos)
 {
-    public static ClienteOutput DeCliente(Cliente cliente) =>
+    public static ClienteOutput DeCliente(Cliente cliente, int quantidadeProjetos) =>
         new(
             cliente.Id,
             cliente.Nome,
@@ -23,7 +23,7 @@ public sealed record ClienteOutput(
             cliente.Endereco,
             cliente.Cpf,
             cliente.PontoReferencia,
-            cliente.EnderecoObra,
             cliente.DataCadastro,
-            cliente.Ativo);
+            cliente.Ativo,
+            quantidadeProjetos);
 }

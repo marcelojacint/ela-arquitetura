@@ -1,31 +1,32 @@
 using ElaArquitetura.Application.Common;
 using ElaArquitetura.Application.Interfaces.Repositories;
-using ElaArquitetura.Application.UseCases.Checklist;
 using Microsoft.Extensions.Logging;
 
 namespace ElaArquitetura.Application.UseCases.Projetos;
 
 public sealed record AvancarEtapaInput(Guid ProjetoId);
 
+/// <summary>
+/// Avança para a próxima etapa e, como o checklist de todas as etapas já existe desde a abertura do projeto,
+/// continua avançando enquanto a nova etapa atual já estiver com todos os itens concluídos
+/// (itens marcados antes da hora não deixam o projeto parado numa etapa já cumprida).
+/// </summary>
 public sealed class AvancarEtapaUseCase
 {
     private readonly IProjetoRepository _projetoRepository;
     private readonly IEtapaRepository _etapaRepository;
     private readonly IChecklistItemRepository _checklistItemRepository;
-    private readonly ProvisionadorChecklist _provisionadorChecklist;
     private readonly ILogger<AvancarEtapaUseCase> _logger;
 
     public AvancarEtapaUseCase(
         IProjetoRepository projetoRepository,
         IEtapaRepository etapaRepository,
         IChecklistItemRepository checklistItemRepository,
-        ProvisionadorChecklist provisionadorChecklist,
         ILogger<AvancarEtapaUseCase> logger)
     {
         _projetoRepository = projetoRepository;
         _etapaRepository = etapaRepository;
         _checklistItemRepository = checklistItemRepository;
-        _provisionadorChecklist = provisionadorChecklist;
         _logger = logger;
     }
 
@@ -49,8 +50,21 @@ public sealed class AvancarEtapaUseCase
         if (!projeto.IsValid)
             return UseCaseResult<ProjetoOutput>.Falha(projeto.Notifications.Select(n => n.Mensagem));
 
+        while (!proximaEtapa.Final)
+        {
+            var checklistDaNovaEtapa = await _checklistItemRepository.ListarPorProjetoEEtapaAsync(projeto.Id, proximaEtapa.Id, cancellationToken);
+            if (checklistDaNovaEtapa.Count == 0 || !checklistDaNovaEtapa.All(item => item.Concluido))
+                break;
+
+            var etapaSeguinte = await _etapaRepository.ObterProximaEtapaAsync(proximaEtapa, cancellationToken);
+            if (etapaSeguinte is null)
+                break;
+
+            projeto.AvancarEtapa(proximaEtapa, etapaSeguinte, checklistDaNovaEtapa);
+            proximaEtapa = etapaSeguinte;
+        }
+
         await _projetoRepository.AtualizarAsync(projeto, cancellationToken);
-        await _provisionadorChecklist.ProvisionarAsync(projeto.Id, proximaEtapa.Id, cancellationToken);
 
         _logger.LogInformation(
             "Projeto {ProjetoId} avancou da etapa {EtapaAnteriorId} para {EtapaNovaId}",

@@ -15,6 +15,9 @@ public class ProjetosController : ControllerBase
     private readonly CriarProjetoUseCase _criarProjetoUseCase;
     private readonly ListarProjetosUseCase _listarProjetosUseCase;
     private readonly ObterProjetoPorIdUseCase _obterProjetoPorIdUseCase;
+    private readonly AtualizarProjetoUseCase _atualizarProjetoUseCase;
+    private readonly ExcluirProjetoUseCase _excluirProjetoUseCase;
+    private readonly DefinirLinkDriveUseCase _definirLinkDriveUseCase;
     private readonly AvancarEtapaUseCase _avancarEtapaUseCase;
     private readonly ConcluirProjetoUseCase _concluirProjetoUseCase;
     private readonly ReabrirProjetoUseCase _reabrirProjetoUseCase;
@@ -30,6 +33,9 @@ public class ProjetosController : ControllerBase
         CriarProjetoUseCase criarProjetoUseCase,
         ListarProjetosUseCase listarProjetosUseCase,
         ObterProjetoPorIdUseCase obterProjetoPorIdUseCase,
+        AtualizarProjetoUseCase atualizarProjetoUseCase,
+        ExcluirProjetoUseCase excluirProjetoUseCase,
+        DefinirLinkDriveUseCase definirLinkDriveUseCase,
         AvancarEtapaUseCase avancarEtapaUseCase,
         ConcluirProjetoUseCase concluirProjetoUseCase,
         ReabrirProjetoUseCase reabrirProjetoUseCase,
@@ -44,6 +50,9 @@ public class ProjetosController : ControllerBase
         _criarProjetoUseCase = criarProjetoUseCase;
         _listarProjetosUseCase = listarProjetosUseCase;
         _obterProjetoPorIdUseCase = obterProjetoPorIdUseCase;
+        _atualizarProjetoUseCase = atualizarProjetoUseCase;
+        _excluirProjetoUseCase = excluirProjetoUseCase;
+        _definirLinkDriveUseCase = definirLinkDriveUseCase;
         _avancarEtapaUseCase = avancarEtapaUseCase;
         _concluirProjetoUseCase = concluirProjetoUseCase;
         _reabrirProjetoUseCase = reabrirProjetoUseCase;
@@ -56,7 +65,9 @@ public class ProjetosController : ControllerBase
         _listarEntregasDoProjetoUseCase = listarEntregasDoProjetoUseCase;
     }
 
-    public sealed record CriarProjetoRequest(Guid ClienteId, string Titulo);
+    public sealed record CriarProjetoRequest(Guid ClienteId, string Titulo, string? EnderecoObra, Guid? FuncionarioResponsavelId);
+    public sealed record AtualizarProjetoRequest(string Titulo, string? EnderecoObra, Guid? FuncionarioResponsavelId);
+    public sealed record DefinirLinkDriveRequest(string LinkDrive);
     public sealed record AlterarStatusRequest(StatusProjeto Status);
     public sealed record AtribuirFuncionarioRequest(Guid FuncionarioId, string? PapelNoProjeto);
     public sealed record CriarChecklistItemRequest(string Descricao, Guid? SubEtapaId, Guid? EtapaId);
@@ -65,7 +76,7 @@ public class ProjetosController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Criar(CriarProjetoRequest request, CancellationToken cancellationToken)
     {
-        var resultado = await _criarProjetoUseCase.ExecutarAsync(new CriarProjetoInput(request.ClienteId, request.Titulo), cancellationToken);
+        var resultado = await _criarProjetoUseCase.ExecutarAsync(new CriarProjetoInput(request.ClienteId, request.Titulo, request.EnderecoObra, request.FuncionarioResponsavelId), cancellationToken);
 
         if (!resultado.Sucesso)
             return BadRequest(new { erros = resultado.Erros });
@@ -85,6 +96,54 @@ public class ProjetosController : ControllerBase
     {
         var projeto = await _obterProjetoPorIdUseCase.ExecutarAsync(id, cancellationToken);
         return projeto is null ? NotFound() : Ok(projeto);
+    }
+
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> Atualizar(Guid id, AtualizarProjetoRequest request, CancellationToken cancellationToken)
+    {
+        var resultado = await _atualizarProjetoUseCase.ExecutarAsync(
+            new AtualizarProjetoInput(id, request.Titulo, request.EnderecoObra, request.FuncionarioResponsavelId), cancellationToken);
+
+        if (!resultado.Sucesso)
+            return BadRequest(new { erros = resultado.Erros });
+
+        return Ok(resultado.Dados);
+    }
+
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Excluir(Guid id, CancellationToken cancellationToken)
+    {
+        var resultado = await _excluirProjetoUseCase.ExecutarAsync(new ExcluirProjetoInput(id), cancellationToken);
+
+        return resultado switch
+        {
+            ResultadoExclusaoProjeto.NaoEncontrado => NotFound(new { erros = new[] { "Projeto não encontrado." } }),
+            ResultadoExclusaoProjeto.UltimoProjetoDoCliente => BadRequest(new { erros = new[] { ExcluirProjetoUseCase.MensagemUltimoProjeto } }),
+            _ => NoContent()
+        };
+    }
+
+    [HttpPut("{id:guid}/link-drive")]
+    public async Task<IActionResult> DefinirLinkDrive(Guid id, DefinirLinkDriveRequest request, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(request.LinkDrive))
+            return BadRequest(new { erros = new[] { "Informe o link do Drive." } });
+
+        return await ResponderLinkDriveAsync(new DefinirLinkDriveInput(id, request.LinkDrive), cancellationToken);
+    }
+
+    [HttpDelete("{id:guid}/link-drive")]
+    public Task<IActionResult> RemoverLinkDrive(Guid id, CancellationToken cancellationToken)
+        => ResponderLinkDriveAsync(new DefinirLinkDriveInput(id, null), cancellationToken);
+
+    private async Task<IActionResult> ResponderLinkDriveAsync(DefinirLinkDriveInput input, CancellationToken cancellationToken)
+    {
+        var resultado = await _definirLinkDriveUseCase.ExecutarAsync(input, cancellationToken);
+
+        if (!resultado.Sucesso)
+            return BadRequest(new { erros = resultado.Erros });
+
+        return Ok(resultado.Dados);
     }
 
     [HttpPatch("{id:guid}/avancar-etapa")]

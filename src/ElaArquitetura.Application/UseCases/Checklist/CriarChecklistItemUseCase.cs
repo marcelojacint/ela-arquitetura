@@ -4,7 +4,10 @@ using ElaArquitetura.Domain.Entities;
 
 namespace ElaArquitetura.Application.UseCases.Checklist;
 
-/// <summary>EtapaId opcional: sem ele o item vai para a etapa atual; com ele, para uma etapa já alcançada.</summary>
+/// <summary>
+/// Item personalizado do cliente. EtapaId opcional: sem ele o item vai para a etapa atual; com ele, para a etapa informada
+/// (qualquer etapa, já que o checklist do projeto inteiro existe desde a abertura).
+/// </summary>
 public sealed record CriarChecklistItemInput(Guid ProjetoId, string Descricao, Guid? SubEtapaId, Guid? EtapaId = null);
 
 public sealed record ChecklistItemCriadoOutput(Guid Id, Guid ProjetoId, Guid EtapaId, Guid? SubEtapaId, string Descricao, bool Concluido);
@@ -40,10 +43,6 @@ public sealed class CriarChecklistItemUseCase
             var etapa = await _etapaRepository.ObterPorIdAsync(input.EtapaId.Value, cancellationToken);
             if (etapa is null)
                 return UseCaseResult<ChecklistItemCriadoOutput>.Falha(new[] { "Etapa não encontrada." });
-
-            var etapaAtual = await _etapaRepository.ObterPorIdAsync(projeto.EtapaAtualId, cancellationToken);
-            if (etapaAtual is not null && etapa.Ordem > etapaAtual.Ordem)
-                return UseCaseResult<ChecklistItemCriadoOutput>.Falha(new[] { "Só é possível adicionar itens em etapas já alcançadas pelo projeto." });
 
             etapaId = etapa.Id;
         }

@@ -16,7 +16,8 @@ public class ClienteRepository : IClienteRepository
 
     public async Task<IReadOnlyCollection<Cliente>> BuscarAsync(string? termo, CancellationToken cancellationToken)
     {
-        var query = _context.Clientes.AsQueryable();
+        // Cliente excluído (desativado) some da lista, mas continua no banco com os projetos.
+        var query = _context.Clientes.Where(c => c.Ativo);
 
         if (!string.IsNullOrWhiteSpace(termo))
         {
