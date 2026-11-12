@@ -55,9 +55,14 @@ builder.Services.AddScoped<ObterFuncionarioPorIdUseCase>();
 builder.Services.AddScoped<AtualizarFuncionarioUseCase>();
 builder.Services.AddScoped<DesativarFuncionarioUseCase>();
 
+builder.Services.AddScoped<AberturaDeProjeto>();
 builder.Services.AddScoped<CriarProjetoUseCase>();
 builder.Services.AddScoped<ListarProjetosUseCase>();
 builder.Services.AddScoped<ObterProjetoPorIdUseCase>();
+builder.Services.AddScoped<AtualizarProjetoUseCase>();
+builder.Services.AddScoped<ExcluirProjetoUseCase>();
+builder.Services.AddScoped<DefinirLinkDriveUseCase>();
+builder.Services.AddScoped<ResponsavelDoProjeto>();
 builder.Services.AddScoped<AvancarEtapaUseCase>();
 builder.Services.AddScoped<ConcluirProjetoUseCase>();
 builder.Services.AddScoped<ReabrirProjetoUseCase>();

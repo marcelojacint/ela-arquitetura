@@ -30,6 +30,12 @@ public class ChecklistItemRepository : IChecklistItemRepository
         await _context.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task AdicionarVariosAsync(IEnumerable<ChecklistItem> itens, CancellationToken cancellationToken)
+    {
+        await _context.ChecklistItens.AddRangeAsync(itens, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
     public async Task AtualizarAsync(ChecklistItem item, CancellationToken cancellationToken)
     {
         _context.ChecklistItens.Update(item);

@@ -86,10 +86,6 @@ namespace ElaArquitetura.Infrastructure.Migrations
                         .HasMaxLength(300)
                         .HasColumnType("character varying(300)");
 
-                    b.Property<string>("EnderecoObra")
-                        .HasMaxLength(300)
-                        .HasColumnType("character varying(300)");
-
                     b.Property<string>("Nome")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -264,8 +260,16 @@ namespace ElaArquitetura.Infrastructure.Migrations
                     b.Property<DateTime>("DataInicio")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("EnderecoObra")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
                     b.Property<Guid>("EtapaAtualId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("LinkDrive")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<string>("Status")
                         .IsRequired()

@@ -18,8 +18,7 @@ public sealed record EtapaDoChecklistOutput(
 
 /// <summary>
 /// Checklist do projeto com todas as etapas (a tela mostra tudo de uma vez).
-/// Etapas ainda não alcançadas vêm sem itens, porque o checklist é provisionado ao entrar na etapa;
-/// para elas o app usa as SubEtapas.
+/// Os itens de todas as etapas já existem desde a abertura do projeto, inclusive os das etapas futuras.
 /// </summary>
 public sealed class ListarChecklistCompletaUseCase
 {

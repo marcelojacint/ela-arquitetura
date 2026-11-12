@@ -10,6 +10,66 @@ public class ProjetoTests
         => new(Guid.NewGuid(), nome, ordem, opcional, final);
 
     [Fact]
+    public void Criar_deve_guardar_endereco_da_obra_sem_espacos_extras()
+    {
+        var projeto = Projeto.Criar(Guid.NewGuid(), "Maria Silva", NovaEtapa("Estudos Preliminares", 2), "  Rua da Obra, 50  ");
+
+        Assert.Equal("Rua da Obra, 50", projeto.EnderecoObra);
+    }
+
+    [Fact]
+    public void AtualizarDados_deve_trocar_titulo_e_endereco_e_deixar_endereco_vazio_como_nulo()
+    {
+        var projeto = Projeto.Criar(Guid.NewGuid(), "Maria Silva", NovaEtapa("Estudos Preliminares", 2), "Rua A, 1");
+
+        projeto.AtualizarDados("  Casa de Praia  ", "   ");
+
+        Assert.True(projeto.IsValid);
+        Assert.Equal("Casa de Praia", projeto.Titulo);
+        Assert.Null(projeto.EnderecoObra);
+    }
+
+    [Theory]
+    [InlineData("  https://drive.google.com/drive/folders/abc  ", "https://drive.google.com/drive/folders/abc")]
+    [InlineData("   ", null)]
+    [InlineData(null, null)]
+    public void DefinirLinkDrive_deve_guardar_link_sem_espacos_ou_remover_quando_vazio(string? entrada, string? esperado)
+    {
+        var projeto = Projeto.Criar(Guid.NewGuid(), "Maria Silva", NovaEtapa("Estudos Preliminares", 2));
+        projeto.DefinirLinkDrive("https://drive.google.com/antigo");
+
+        projeto.DefinirLinkDrive(entrada);
+
+        Assert.True(projeto.IsValid);
+        Assert.Equal(esperado, projeto.LinkDrive);
+    }
+
+    [Theory]
+    [InlineData("drive.google.com/pasta")]
+    [InlineData("ftp://drive.google.com/pasta")]
+    [InlineData("não é link")]
+    public void DefinirLinkDrive_deve_recusar_link_invalido_e_manter_o_anterior(string entrada)
+    {
+        var projeto = Projeto.Criar(Guid.NewGuid(), "Maria Silva", NovaEtapa("Estudos Preliminares", 2));
+        projeto.DefinirLinkDrive("https://drive.google.com/antigo");
+
+        projeto.DefinirLinkDrive(entrada);
+
+        Assert.False(projeto.IsValid);
+        Assert.Equal("https://drive.google.com/antigo", projeto.LinkDrive);
+    }
+
+    [Fact]
+    public void AtualizarDados_deve_notificar_quando_titulo_esta_vazio()
+    {
+        var projeto = Projeto.Criar(Guid.NewGuid(), "Maria Silva", NovaEtapa("Estudos Preliminares", 2));
+
+        projeto.AtualizarDados("   ", null);
+
+        Assert.False(projeto.IsValid);
+    }
+
+    [Fact]
     public void PodeAvancarEtapa_deve_ser_falso_quando_checklist_obrigatorio_esta_incompleto()
     {
         var etapaAtual = NovaEtapa("Anteprojeto", 3);
