@@ -221,9 +221,11 @@ namespace ElaArquitetura.Infrastructure.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<string>("Cargo")
-                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
+
+                    b.Property<DateOnly?>("DataNascimento")
+                        .HasColumnType("date");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -236,13 +238,13 @@ namespace ElaArquitetura.Infrastructure.Migrations
                         .HasColumnType("character varying(200)");
 
                     b.Property<string>("SenhaHash")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.HasKey("Id");
 
                     b.HasIndex("Email")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("\"Ativo\" = true");
 
                     b.ToTable("funcionarios", (string)null);
                 });

@@ -11,6 +11,6 @@ public sealed class ObterFuncionarioPorIdUseCase
     public async Task<FuncionarioOutput?> ExecutarAsync(Guid id, CancellationToken cancellationToken)
     {
         var funcionario = await _funcionarioRepository.ObterPorIdAsync(id, cancellationToken);
-        return funcionario is null ? null : FuncionarioOutput.DeFuncionario(funcionario);
+        return funcionario is null || !funcionario.Ativo ? null : FuncionarioOutput.DeFuncionario(funcionario);
     }
 }

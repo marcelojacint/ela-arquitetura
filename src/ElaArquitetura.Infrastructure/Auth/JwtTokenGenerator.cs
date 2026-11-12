@@ -21,7 +21,7 @@ public class JwtTokenGenerator : IJwtTokenGenerator
             new Claim(JwtRegisteredClaimNames.Sub, funcionario.Id.ToString()),
             new Claim(JwtRegisteredClaimNames.Email, funcionario.Email),
             new Claim(ClaimTypes.Name, funcionario.Nome),
-            new Claim(ClaimTypes.Role, funcionario.Cargo)
+            new Claim(ClaimTypes.Role, funcionario.Cargo ?? string.Empty)
         };
 
         var chave = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.Key));

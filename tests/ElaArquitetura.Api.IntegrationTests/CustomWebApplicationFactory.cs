@@ -1,6 +1,8 @@
+using ElaArquitetura.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Testcontainers.PostgreSql;
 using Xunit;
@@ -37,6 +39,14 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>, IAsyn
         await _postgres.StartAsync();
 
         using var scope = Services.CreateScope();
+    }
+
+    /// <summary>Id da usuária do sistema criada pelo DevSeed (a API não expõe esse cadastro).</summary>
+    public async Task<Guid> ObterAdminIdAsync()
+    {
+        using var scope = Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ElaArquiteturaDbContext>();
+        return await dbContext.Funcionarios.Where(f => f.Email == TestAuth.AdminEmail).Select(f => f.Id).SingleAsync();
     }
 
     async Task IAsyncLifetime.DisposeAsync()

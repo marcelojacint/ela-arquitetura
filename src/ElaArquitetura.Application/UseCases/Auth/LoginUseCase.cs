@@ -7,7 +7,7 @@ namespace ElaArquitetura.Application.UseCases.Auth;
 
 public sealed record LoginInput(string Email, string Senha);
 
-public sealed record LoginOutput(string Token, string RefreshToken, string Nome, string Cargo);
+public sealed record LoginOutput(string Token, string RefreshToken, string Nome, string? Cargo);
 
 public sealed class LoginUseCase
 {
@@ -37,7 +37,8 @@ public sealed class LoginUseCase
     {
         var funcionario = await _funcionarioRepository.ObterPorEmailAsync(input.Email, cancellationToken);
 
-        if (funcionario is null || !funcionario.Ativo || !_passwordHasher.Verificar(input.Senha, funcionario.SenhaHash))
+        if (funcionario is null || !funcionario.Ativo || !funcionario.PossuiAcesso
+            || !_passwordHasher.Verificar(input.Senha, funcionario.SenhaHash!))
             return UseCaseResult<LoginOutput>.Falha(new[] { "Email ou senha inválidos." });
 
         var token = _jwtTokenGenerator.GerarToken(funcionario);

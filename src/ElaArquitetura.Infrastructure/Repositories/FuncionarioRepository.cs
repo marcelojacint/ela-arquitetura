@@ -15,10 +15,16 @@ public class FuncionarioRepository : IFuncionarioRepository
         => _context.Funcionarios.FirstOrDefaultAsync(f => f.Id == id, cancellationToken);
 
     public Task<Funcionario?> ObterPorEmailAsync(string email, CancellationToken cancellationToken)
-        => _context.Funcionarios.FirstOrDefaultAsync(f => f.Email == email, cancellationToken);
+        => _context.Funcionarios.FirstOrDefaultAsync(f => f.Email == email && f.Ativo, cancellationToken);
 
     public async Task<IReadOnlyCollection<Funcionario>> ListarAsync(CancellationToken cancellationToken)
         => await _context.Funcionarios.OrderBy(f => f.Nome).ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyCollection<Funcionario>> ListarCadastradosAsync(CancellationToken cancellationToken)
+        => await _context.Funcionarios
+            .Where(f => f.Ativo && f.SenhaHash == null)
+            .OrderBy(f => f.Nome)
+            .ToListAsync(cancellationToken);
 
     public async Task AdicionarAsync(Funcionario funcionario, CancellationToken cancellationToken)
     {

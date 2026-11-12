@@ -113,9 +113,7 @@ public class ProjetosFluxoCompletoTests
         var funcionarioResponse = await client.PostAsJsonAsync("/api/funcionarios", new
         {
             nome = "Funcionario Projeto",
-            email = $"proj.{Guid.NewGuid():N}@teste.com",
-            cargo = "Arquiteta",
-            senha = "SenhaForte123"
+            email = $"proj.{Guid.NewGuid():N}@teste.com"
         });
         var funcionario = await funcionarioResponse.Content.ReadFromJsonAsync<FuncionarioOutput>(TestJson.Options);
 
