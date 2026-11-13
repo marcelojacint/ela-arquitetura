@@ -11,18 +11,15 @@ public sealed class ConcluirProjetoUseCase
 {
     private readonly IProjetoRepository _projetoRepository;
     private readonly IEtapaRepository _etapaRepository;
-    private readonly IEntregaRepository _entregaRepository;
     private readonly ILogger<ConcluirProjetoUseCase> _logger;
 
     public ConcluirProjetoUseCase(
         IProjetoRepository projetoRepository,
         IEtapaRepository etapaRepository,
-        IEntregaRepository entregaRepository,
         ILogger<ConcluirProjetoUseCase> logger)
     {
         _projetoRepository = projetoRepository;
         _etapaRepository = etapaRepository;
-        _entregaRepository = entregaRepository;
         _logger = logger;
     }
 
@@ -36,9 +33,7 @@ public sealed class ConcluirProjetoUseCase
         if (etapaAtual is null)
             return UseCaseResult<ProjetoOutput>.Falha(new[] { "Etapa atual do projeto não encontrada." });
 
-        var entregas = await _entregaRepository.ListarPorProjetoAsync(projeto.Id, cancellationToken);
-
-        projeto.Concluir(etapaAtual, entregas);
+        projeto.Concluir(etapaAtual);
         if (!projeto.IsValid)
             return UseCaseResult<ProjetoOutput>.Falha(projeto.Notifications.Select(n => n.Mensagem));
 

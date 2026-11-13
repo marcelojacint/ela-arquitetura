@@ -138,12 +138,12 @@ public class ProjetoTests
     }
 
     [Fact]
-    public void Concluir_deve_gerar_notification_quando_nao_ha_entrega_registrada()
+    public void Concluir_deve_gerar_notification_quando_nao_ha_link_do_drive()
     {
         var etapaFinal = NovaEtapa("Conclusão e Entrega", 6, final: true);
         var projeto = Projeto.Criar(Guid.NewGuid(), "Casa Silva", etapaFinal);
 
-        projeto.Concluir(etapaFinal, Array.Empty<Entrega>());
+        projeto.Concluir(etapaFinal);
 
         Assert.False(projeto.IsValid);
         Assert.Equal(StatusProjeto.EmAndamento, projeto.Status);
@@ -154,22 +154,22 @@ public class ProjetoTests
     {
         var etapaAtual = NovaEtapa("Anteprojeto", 3);
         var projeto = Projeto.Criar(Guid.NewGuid(), "Casa Silva", etapaAtual);
-        var entrega = new Entrega(projeto.Id, "https://drive.google.com/xyz");
+        projeto.DefinirLinkDrive("https://drive.google.com/xyz");
 
-        projeto.Concluir(etapaAtual, new[] { entrega });
+        projeto.Concluir(etapaAtual);
 
         Assert.False(projeto.IsValid);
         Assert.Equal(StatusProjeto.EmAndamento, projeto.Status);
     }
 
     [Fact]
-    public void Concluir_deve_mudar_status_quando_etapa_e_final_e_ha_entrega_registrada()
+    public void Concluir_deve_mudar_status_quando_etapa_e_final_e_ha_link_do_drive()
     {
         var etapaFinal = NovaEtapa("Conclusão e Entrega", 6, final: true);
         var projeto = Projeto.Criar(Guid.NewGuid(), "Casa Silva", etapaFinal);
-        var entrega = new Entrega(projeto.Id, "https://drive.google.com/xyz");
+        projeto.DefinirLinkDrive("https://drive.google.com/xyz");
 
-        projeto.Concluir(etapaFinal, new[] { entrega });
+        projeto.Concluir(etapaFinal);
 
         Assert.True(projeto.IsValid);
         Assert.Equal(StatusProjeto.Concluido, projeto.Status);

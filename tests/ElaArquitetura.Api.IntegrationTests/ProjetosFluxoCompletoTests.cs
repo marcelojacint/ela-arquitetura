@@ -58,10 +58,27 @@ public class ProjetosFluxoCompletoTests
             }
         }
 
-        var concluirSemEntregaResponse = await client.PatchAsync(
+        var concluirSemLinkResponse = await client.PatchAsync(
             $"/api/projetos/{projeto.Id}/status", JsonContent.Create(new { status = "Concluido" }));
-        Assert.Equal(HttpStatusCode.BadRequest, concluirSemEntregaResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, concluirSemLinkResponse.StatusCode);
 
+        await client.PutAsJsonAsync($"/api/projetos/{projeto.Id}/link-drive", new { linkDrive = "https://drive.google.com/pasta-integracao" });
+
+        var concluirResponse = await client.PatchAsync(
+            $"/api/projetos/{projeto.Id}/status", JsonContent.Create(new { status = "Concluido" }));
+        Assert.Equal(HttpStatusCode.OK, concluirResponse.StatusCode);
+        var projetoConcluido = await concluirResponse.Content.ReadFromJsonAsync<ProjetoOutput>(TestJson.Options);
+        Assert.Equal(StatusProjeto.Concluido, projetoConcluido!.Status);
+        Assert.Equal(100, projetoConcluido.PercentualConcluido);
+
+        // Com todos os projetos concluídos, o cliente sai de "Clientes" e vai para "Concluídos".
+        var clientesEmAndamento = await client.GetFromJsonAsync<List<ClienteOutput>>("/api/clientes", TestJson.Options);
+        Assert.DoesNotContain(clientesEmAndamento!, c => c.Id == cliente.Id);
+        var concluidos = await client.GetFromJsonAsync<List<ClienteConcluidoOutput>>("/api/clientes/concluidos", TestJson.Options);
+        var concluido = Assert.Single(concluidos!, c => c.Id == cliente.Id);
+        Assert.Equal("https://drive.google.com/pasta-integracao", Assert.Single(concluido.Projetos).LinkDrive);
+
+        // A entrega fica registrada quando o projeto é enviado ao cliente pelo WhatsApp.
         var entregaResponse = await client.PostAsJsonAsync($"/api/projetos/{projeto.Id}/entrega", new
         {
             linkDrive = "https://drive.google.com/pasta-integracao",
@@ -71,18 +88,14 @@ public class ProjetosFluxoCompletoTests
         var entrega = await entregaResponse.Content.ReadFromJsonAsync<EntregaOutput>(TestJson.Options);
         Assert.True(entrega!.EnviadoParaWhatsapp);
 
-        var concluirResponse = await client.PatchAsync(
-            $"/api/projetos/{projeto.Id}/status", JsonContent.Create(new { status = "Concluido" }));
-        Assert.Equal(HttpStatusCode.OK, concluirResponse.StatusCode);
-        var projetoConcluido = await concluirResponse.Content.ReadFromJsonAsync<ProjetoOutput>(TestJson.Options);
-        Assert.Equal(StatusProjeto.Concluido, projetoConcluido!.Status);
-        Assert.Equal(100, projetoConcluido.PercentualConcluido);
-
         var reabrirResponse = await client.PatchAsync(
             $"/api/projetos/{projeto.Id}/status", JsonContent.Create(new { status = "EmAndamento" }));
         Assert.Equal(HttpStatusCode.OK, reabrirResponse.StatusCode);
         var projetoReaberto = await reabrirResponse.Content.ReadFromJsonAsync<ProjetoOutput>(TestJson.Options);
         Assert.Equal(StatusProjeto.EmAndamento, projetoReaberto!.Status);
+
+        var clientesDepoisDeReabrir = await client.GetFromJsonAsync<List<ClienteOutput>>("/api/clientes", TestJson.Options);
+        Assert.Contains(clientesDepoisDeReabrir!, c => c.Id == cliente.Id);
     }
 
     [Fact]
@@ -309,6 +322,51 @@ public class ProjetosFluxoCompletoTests
 
         var clientes = await client.GetFromJsonAsync<List<ClienteOutput>>("/api/clientes", TestJson.Options);
         Assert.Equal(1, clientes!.Single(c => c.Id == cliente.Id).QuantidadeProjetos);
+    }
+
+    [Fact]
+    public async Task Cliente_com_dois_projetos_so_vai_para_concluidos_quando_os_dois_forem_concluidos_e_volta_ao_reabrir_um()
+    {
+        var client = await TestAuth.ComoAdminAsync(_factory.CreateClient());
+        var cliente = await CriarClienteAsync(client);
+        var primeiro = await ObterProjetoDoClienteAsync(client, cliente.Id);
+        var segundoResponse = await client.PostAsJsonAsync("/api/projetos", new { clienteId = cliente.Id, titulo = "Casa de Praia" });
+        var segundo = (await segundoResponse.Content.ReadFromJsonAsync<ProjetoOutput>(TestJson.Options))!;
+
+        await ConcluirProjetoAsync(client, primeiro.Id);
+        Assert.Contains(await ListarClientesAsync(client), c => c.Id == cliente.Id);
+        Assert.DoesNotContain(await ListarConcluidosAsync(client), c => c.Id == cliente.Id);
+
+        await ConcluirProjetoAsync(client, segundo.Id);
+        Assert.DoesNotContain(await ListarClientesAsync(client), c => c.Id == cliente.Id);
+        var concluido = Assert.Single(await ListarConcluidosAsync(client), c => c.Id == cliente.Id);
+        Assert.Equal(2, concluido.Projetos.Count);
+
+        var reabrirResponse = await client.PatchAsync(
+            $"/api/projetos/{segundo.Id}/status", JsonContent.Create(new { status = "EmAndamento" }));
+        Assert.Equal(HttpStatusCode.OK, reabrirResponse.StatusCode);
+        Assert.Contains(await ListarClientesAsync(client), c => c.Id == cliente.Id);
+        Assert.DoesNotContain(await ListarConcluidosAsync(client), c => c.Id == cliente.Id);
+    }
+
+    private static async Task<List<ClienteOutput>> ListarClientesAsync(HttpClient client)
+        => (await client.GetFromJsonAsync<List<ClienteOutput>>("/api/clientes", TestJson.Options))!;
+
+    private static async Task<List<ClienteConcluidoOutput>> ListarConcluidosAsync(HttpClient client)
+        => (await client.GetFromJsonAsync<List<ClienteConcluidoOutput>>("/api/clientes/concluidos", TestJson.Options))!;
+
+    /// <summary>Marca o checklist de todas as etapas, define o link do Drive e conclui.</summary>
+    private static async Task ConcluirProjetoAsync(HttpClient client, Guid projetoId)
+    {
+        for (var i = 0; i < 4; i++)
+        {
+            await ConcluirChecklistDaEtapaAtualAsync(client, projetoId);
+            await client.PatchAsync($"/api/projetos/{projetoId}/avancar-etapa", null);
+        }
+
+        await client.PutAsJsonAsync($"/api/projetos/{projetoId}/link-drive", new { linkDrive = "https://drive.google.com/pasta" });
+        var response = await client.PatchAsync($"/api/projetos/{projetoId}/status", JsonContent.Create(new { status = "Concluido" }));
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     [Fact]
