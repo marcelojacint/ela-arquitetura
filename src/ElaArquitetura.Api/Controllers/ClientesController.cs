@@ -12,6 +12,7 @@ public class ClientesController : ControllerBase
     private readonly CriarClienteUseCase _criarClienteUseCase;
     private readonly AtualizarClienteUseCase _atualizarClienteUseCase;
     private readonly BuscarClientesUseCase _buscarClientesUseCase;
+    private readonly ListarClientesConcluidosUseCase _listarClientesConcluidosUseCase;
     private readonly ObterClientePorIdUseCase _obterClientePorIdUseCase;
     private readonly ObterWhatsAppLinkUseCase _obterWhatsAppLinkUseCase;
     private readonly DesativarClienteUseCase _desativarClienteUseCase;
@@ -20,6 +21,7 @@ public class ClientesController : ControllerBase
         CriarClienteUseCase criarClienteUseCase,
         AtualizarClienteUseCase atualizarClienteUseCase,
         BuscarClientesUseCase buscarClientesUseCase,
+        ListarClientesConcluidosUseCase listarClientesConcluidosUseCase,
         ObterClientePorIdUseCase obterClientePorIdUseCase,
         ObterWhatsAppLinkUseCase obterWhatsAppLinkUseCase,
         DesativarClienteUseCase desativarClienteUseCase)
@@ -27,6 +29,7 @@ public class ClientesController : ControllerBase
         _criarClienteUseCase = criarClienteUseCase;
         _atualizarClienteUseCase = atualizarClienteUseCase;
         _buscarClientesUseCase = buscarClientesUseCase;
+        _listarClientesConcluidosUseCase = listarClientesConcluidosUseCase;
         _obterClientePorIdUseCase = obterClientePorIdUseCase;
         _obterWhatsAppLinkUseCase = obterWhatsAppLinkUseCase;
         _desativarClienteUseCase = desativarClienteUseCase;
@@ -53,6 +56,14 @@ public class ClientesController : ControllerBase
     public async Task<IActionResult> Buscar([FromQuery] string? busca, CancellationToken cancellationToken)
     {
         var clientes = await _buscarClientesUseCase.ExecutarAsync(new BuscarClientesInput(busca), cancellationToken);
+        return Ok(clientes);
+    }
+
+    /// <summary>Aba "Concluídos": clientes com todos os projetos concluídos (os demais saem em GET /api/clientes).</summary>
+    [HttpGet("concluidos")]
+    public async Task<IActionResult> ListarConcluidos([FromQuery] string? busca, CancellationToken cancellationToken)
+    {
+        var clientes = await _listarClientesConcluidosUseCase.ExecutarAsync(busca, cancellationToken);
         return Ok(clientes);
     }
 

@@ -97,7 +97,11 @@ public class Projeto : Notifiable
         EtapaAtualId = proximaEtapa.Id;
     }
 
-    public void Concluir(Etapa etapaAtual, IReadOnlyCollection<Entrega> entregas)
+    /// <summary>
+    /// Concluir vem antes da entrega: o projeto vai para "Concluídos" e de lá é entregue ao cliente
+    /// pelo WhatsApp com o link do Drive, por isso o link já precisa estar definido.
+    /// </summary>
+    public void Concluir(Etapa etapaAtual)
     {
         if (etapaAtual.Id != EtapaAtualId)
         {
@@ -107,13 +111,13 @@ public class Projeto : Notifiable
 
         if (!etapaAtual.Final)
         {
-            AddNotification(nameof(Status), "O projeto só pode ser concluído após alcançar a etapa final do fluxo (Conclusão e Entrega).");
+            AddNotification(nameof(Status), "Conclua todos os itens do checklist antes de concluir o projeto.");
             return;
         }
 
-        if (entregas.Count == 0)
+        if (LinkDrive is null)
         {
-            AddNotification(nameof(Status), "É necessário registrar ao menos uma entrega antes de concluir o projeto.");
+            AddNotification(nameof(LinkDrive), "Insira o link do Drive antes de concluir o projeto.");
             return;
         }
 

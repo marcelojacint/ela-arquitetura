@@ -45,6 +45,7 @@ builder.Services.AddScoped<RefreshTokenUseCase>();
 builder.Services.AddScoped<CriarClienteUseCase>();
 builder.Services.AddScoped<AtualizarClienteUseCase>();
 builder.Services.AddScoped<BuscarClientesUseCase>();
+builder.Services.AddScoped<ListarClientesConcluidosUseCase>();
 builder.Services.AddScoped<ObterClientePorIdUseCase>();
 builder.Services.AddScoped<ObterWhatsAppLinkUseCase>();
 builder.Services.AddScoped<DesativarClienteUseCase>();

@@ -42,6 +42,12 @@ public class ProjetoRepository : IProjetoRepository
             cancellationToken);
     }
 
+    public async Task<IReadOnlyCollection<Projeto>> ListarPorClientesAsync(IReadOnlyCollection<Guid> clienteIds, CancellationToken cancellationToken)
+        => await _context.Projetos
+            .Where(p => clienteIds.Contains(p.ClienteId))
+            .OrderByDescending(p => p.DataInicio)
+            .ToListAsync(cancellationToken);
+
     public async Task<IReadOnlyDictionary<Guid, int>> ContarPorClientesAsync(IReadOnlyCollection<Guid> clienteIds, CancellationToken cancellationToken)
         => await _context.Projetos
             .Where(p => clienteIds.Contains(p.ClienteId))
