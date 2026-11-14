@@ -16,13 +16,15 @@ public class JwtTokenGenerator : IJwtTokenGenerator
 
     public string GerarToken(Funcionario funcionario)
     {
-        var claims = new[]
+        var claims = new List<Claim>
         {
-            new Claim(JwtRegisteredClaimNames.Sub, funcionario.Id.ToString()),
-            new Claim(JwtRegisteredClaimNames.Email, funcionario.Email),
-            new Claim(ClaimTypes.Name, funcionario.Nome),
-            new Claim(ClaimTypes.Role, funcionario.Cargo ?? string.Empty)
+            new(JwtRegisteredClaimNames.Sub, funcionario.Id.ToString()),
+            new(JwtRegisteredClaimNames.Email, funcionario.Email),
+            new(ClaimTypes.Name, funcionario.Nome)
         };
+
+        if (!string.IsNullOrWhiteSpace(funcionario.Cargo))
+            claims.Add(new Claim(ClaimTypes.Role, funcionario.Cargo));
 
         var chave = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.Key));
         var credenciais = new SigningCredentials(chave, SecurityAlgorithms.HmacSha256);
