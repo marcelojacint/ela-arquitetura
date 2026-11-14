@@ -29,7 +29,9 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>, IAsyn
                 ["Jwt:Issuer"] = "ElaArquitetura.Api.Tests",
                 ["Jwt:Audience"] = "ElaArquitetura.App.Tests",
                 ["Jwt:Key"] = "chave-simetrica-somente-para-testes-de-integracao-nao-usar-em-producao",
-                ["Jwt:ExpirationMinutes"] = "60"
+                ["Jwt:ExpirationMinutes"] = "60",
+                // Os testes fazem dezenas de logins seguidos do mesmo "IP"; o limite real é testado à parte.
+                ["RateLimiting:Login:PermitLimit"] = "100000"
             });
         });
     }

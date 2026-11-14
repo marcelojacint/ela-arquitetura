@@ -17,6 +17,19 @@ public class FuncionarioTests
         Assert.Equal(new DateOnly(2003, 8, 10), funcionario.DataNascimento);
     }
 
+    [Theory]
+    [InlineData("  Jamille@Email.COM ")]
+    [InlineData("JAMILLE@EMAIL.COM")]
+    public void Email_deve_ser_gravado_sem_espacos_e_em_minusculas(string email)
+    {
+        Assert.Equal("jamille@email.com", Funcionario.Cadastrar("Jamille", email, null, null).Email);
+        Assert.Equal("jamille@email.com", Funcionario.Criar("Jamille", email, "Proprietaria", "hash").Email);
+
+        var funcionario = Funcionario.Cadastrar("Jamille", "outro@email.com", null, null);
+        funcionario.Atualizar("Jamille", email, null, null);
+        Assert.Equal("jamille@email.com", funcionario.Email);
+    }
+
     [Fact]
     public void Cadastrar_deve_aceitar_telefone_e_nascimento_vazios()
     {
