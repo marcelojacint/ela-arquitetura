@@ -41,7 +41,7 @@ Pré-requisitos: .NET 10 SDK e Docker.
    dotnet user-secrets set "Jwt:Key" "<chave-aleatoria-com-pelo-menos-32-caracteres>" --project src/ElaArquitetura.Api
    ```
 
-   Sem essa chave a API sobe, mas o login falha.
+   Sem essa chave (ou com menos de 32 caracteres) a API não sobe e mostra o erro de configuração.
 
 3. Rode a API (em Development as migrations são aplicadas automaticamente e é criada a usuária padrão `admin@elaarquitetura.com.br` / `Trocar123!`):
 

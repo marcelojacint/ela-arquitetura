@@ -33,7 +33,7 @@ public class Funcionario : Notifiable
         {
             Id = Guid.NewGuid(),
             Nome = nome,
-            Email = email,
+            Email = NormalizarEmail(email),
             Cargo = cargo,
             SenhaHash = senhaHash,
             Ativo = true
@@ -56,7 +56,7 @@ public class Funcionario : Notifiable
         {
             Id = Guid.NewGuid(),
             Nome = nome?.Trim() ?? string.Empty,
-            Email = email?.Trim() ?? string.Empty,
+            Email = NormalizarEmail(email),
             Ativo = true
         };
 
@@ -77,13 +77,19 @@ public class Funcionario : Notifiable
         if (string.IsNullOrWhiteSpace(email))
             AddNotification(nameof(Email), "Email do funcionário é obrigatório.");
         else
-            Email = email.Trim();
+            Email = NormalizarEmail(email);
 
         DefinirTelefone(telefoneBruto);
         DefinirDataNascimento(dataNascimento);
     }
 
     public void Desativar() => Ativo = false;
+
+    /// <summary>
+    /// E-mail sempre sem espaços nas pontas e em minúsculas, para que "Joao@x.com" e "joao@x.com"
+    /// sejam o mesmo login (o Postgres compara texto diferenciando maiúsculas).
+    /// </summary>
+    public static string NormalizarEmail(string? email) => email?.Trim().ToLowerInvariant() ?? string.Empty;
 
     private void ValidarNomeEEmail()
     {
