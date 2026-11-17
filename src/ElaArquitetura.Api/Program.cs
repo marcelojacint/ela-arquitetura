@@ -36,6 +36,14 @@ builder.Services.AddOptions<LoginRateLimitOptions>()
     .ValidateDataAnnotations()
     .ValidateOnStart();
 
+builder.Services.AddOptions<UsuariaInicialOptions>()
+    .Bind(builder.Configuration.GetSection(UsuariaInicialOptions.SectionName))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<ElaArquiteturaDbContext>("banco");
+
 builder.Services.AddScoped<IClienteRepository, ClienteRepository>();
 builder.Services.AddScoped<IFuncionarioRepository, FuncionarioRepository>();
 builder.Services.AddScoped<IProjetoRepository, ProjetoRepository>();
@@ -173,18 +181,22 @@ builder.Services.AddSwaggerGen(options =>
 
 var app = builder.Build();
 
+// Em todos os ambientes: aplica as migrations pendentes e garante a usuária do sistema.
+// Para quem prefere migrar fora da aplicação (bundle/pipeline), basta desligar com
+// Database__AplicarMigrationsNaInicializacao=false.
+if (app.Configuration.GetValue("Database:AplicarMigrationsNaInicializacao", true))
+{
+    using var scope = app.Services.CreateScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<ElaArquiteturaDbContext>();
+    await dbContext.Database.MigrateAsync();
+}
+
+await UsuariaInicialSeed.GarantirAsync(app.Services);
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
-
-    using (var scope = app.Services.CreateScope())
-    {
-        var dbContext = scope.ServiceProvider.GetRequiredService<ElaArquiteturaDbContext>();
-        await dbContext.Database.MigrateAsync();
-    }
-
-    await DevSeed.GarantirFuncionarioPadraoAsync(app.Services);
 }
 else
 {
@@ -211,6 +223,9 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Usado pela plataforma de hospedagem para saber se a API está no ar e falando com o banco.
+app.MapHealthChecks("/health").AllowAnonymous().DisableRateLimiting();
 
 app.Run();
 

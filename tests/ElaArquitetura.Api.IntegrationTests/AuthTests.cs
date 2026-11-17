@@ -142,6 +142,52 @@ public class AuthTests
         Assert.Throws<OptionsValidationException>(() => factory.CreateClient());
     }
 
+    [Fact]
+    public async Task Health_responde_ok_sem_autenticacao()
+    {
+        var response = await _factory.CreateClient().GetAsync("/health");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Alterar_usuaria_na_configuracao_troca_o_login_e_encerra_as_sessoes()
+    {
+        var sessaoAntiga = await LoginAsync(_factory.CreateClient());
+        const string novoEmail = "nova.usuaria@email.com";
+        const string novaSenha = "outra-senha-de-teste";
+
+        try
+        {
+            using var alterada = ComUsuaria(novoEmail, novaSenha);
+            var client = alterada.CreateClient();
+
+            var loginNovo = await client.PostAsJsonAsync("/api/auth/login", new { email = novoEmail, senha = novaSenha });
+            var loginAntigo = await client.PostAsJsonAsync("/api/auth/login", new { email = TestAuth.AdminEmail, senha = TestAuth.AdminSenha });
+            var refreshAntigo = await client.PostAsJsonAsync("/api/auth/refresh", new { refreshToken = sessaoAntiga.RefreshToken });
+
+            Assert.Equal(HttpStatusCode.OK, loginNovo.StatusCode);
+            Assert.Equal(HttpStatusCode.Unauthorized, loginAntigo.StatusCode);
+            Assert.Equal(HttpStatusCode.Unauthorized, refreshAntigo.StatusCode);
+        }
+        finally
+        {
+            // Volta à configuração original mesmo se o teste falhar, para não afetar os outros testes da coleção.
+            using var restaurada = ComUsuaria(TestAuth.AdminEmail, TestAuth.AdminSenha);
+            restaurada.CreateClient();
+        }
+
+        await LoginAsync(_factory.CreateClient());
+    }
+
+    private Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<Program> ComUsuaria(string email, string senha)
+        => _factory.WithWebHostBuilder(builder =>
+            builder.ConfigureAppConfiguration((_, config) => config.AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["UsuariaInicial:Email"] = email,
+                ["UsuariaInicial:Senha"] = senha
+            })));
+
     private static async Task<LoginOutput> LoginAsync(HttpClient client)
     {
         var response = await client.PostAsJsonAsync("/api/auth/login", new { email = TestAuth.AdminEmail, senha = TestAuth.AdminSenha });

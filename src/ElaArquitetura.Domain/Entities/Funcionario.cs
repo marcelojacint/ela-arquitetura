@@ -83,6 +83,34 @@ public class Funcionario : Notifiable
         DefinirDataNascimento(dataNascimento);
     }
 
+    /// <summary>
+    /// Redefine os dados de acesso da usuária do sistema (vindos da configuração "UsuariaInicial").
+    /// Só vale para quem já tem acesso: funcionário de consulta não ganha senha por aqui.
+    /// </summary>
+    public void RedefinirAcesso(string nome, string email, string senhaHash)
+    {
+        if (!PossuiAcesso)
+        {
+            AddNotification(nameof(SenhaHash), "Só a usuária do sistema pode ter os dados de acesso redefinidos.");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(nome))
+            AddNotification(nameof(Nome), "Nome do funcionário é obrigatório.");
+        if (string.IsNullOrWhiteSpace(email))
+            AddNotification(nameof(Email), "Email do funcionário é obrigatório.");
+        if (string.IsNullOrWhiteSpace(senhaHash))
+            AddNotification(nameof(SenhaHash), "Senha do funcionário é obrigatória.");
+
+        if (!IsValid)
+            return;
+
+        Nome = nome.Trim();
+        Email = NormalizarEmail(email);
+        SenhaHash = senhaHash;
+        Ativo = true;
+    }
+
     public void Desativar() => Ativo = false;
 
     /// <summary>

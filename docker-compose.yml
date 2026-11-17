@@ -9,6 +9,26 @@ services:
       - "5433:5432"
     volumes:
       - ela_arquitetura_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ela_arquitetura -d ela_arquitetura"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Só sobe com "docker compose --profile api up --build": serve para testar a imagem de produção localmente.
+  # Antes, defina JWT_KEY e USUARIA_SENHA no terminal ou num arquivo .env ao lado deste (o .env não é versionado).
+  api:
+    profiles: ["api"]
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=ela_arquitetura;Username=ela_arquitetura;Password=ela_arquitetura_dev"
+      Jwt__Key: "${JWT_KEY:-}"
+      UsuariaInicial__Senha: "${USUARIA_SENHA:-}"
+    ports:
+      - "8080:8080"
 
 volumes:
   ela_arquitetura_db_data:
