@@ -84,4 +84,40 @@ public class FuncionarioTests
         Assert.True(funcionario.IsValid);
         Assert.True(funcionario.PossuiAcesso);
     }
+
+    [Fact]
+    public void Redefinir_acesso_da_usuaria_troca_nome_email_e_senha()
+    {
+        var funcionario = Funcionario.Criar("Administradora", "admin@email.com", "Proprietaria", "hash-antigo");
+
+        funcionario.RedefinirAcesso(" Éla ", " Contato@Email.com ", "hash-novo");
+
+        Assert.True(funcionario.IsValid);
+        Assert.Equal("Éla", funcionario.Nome);
+        Assert.Equal("contato@email.com", funcionario.Email);
+        Assert.Equal("hash-novo", funcionario.SenhaHash);
+    }
+
+    [Fact]
+    public void Redefinir_acesso_de_funcionario_sem_acesso_e_recusado()
+    {
+        var funcionario = Funcionario.Cadastrar("Jamille", "jbl@email.com", null, null);
+
+        funcionario.RedefinirAcesso("Jamille", "jbl@email.com", "hash");
+
+        Assert.False(funcionario.IsValid);
+        Assert.False(funcionario.PossuiAcesso);
+    }
+
+    [Fact]
+    public void Redefinir_acesso_com_senha_vazia_nao_altera_nada()
+    {
+        var funcionario = Funcionario.Criar("Administradora", "admin@email.com", "Proprietaria", "hash");
+
+        funcionario.RedefinirAcesso("Administradora", "novo@email.com", "");
+
+        Assert.False(funcionario.IsValid);
+        Assert.Equal("admin@email.com", funcionario.Email);
+        Assert.Equal("hash", funcionario.SenhaHash);
+    }
 }

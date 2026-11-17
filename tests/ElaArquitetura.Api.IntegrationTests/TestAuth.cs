@@ -6,8 +6,10 @@ namespace ElaArquitetura.Api.IntegrationTests;
 
 internal static class TestAuth
 {
-    public const string AdminEmail = "admin@elaarquitetura.com.br";
-    public const string AdminSenha = "Trocar123!";
+    // Os testes rodam num banco descartável (Testcontainers) e informam a usuária pela configuração
+    // (CustomWebApplicationFactory); a senha é só de teste, nunca a real.
+    public const string AdminEmail = "contato.elaarquitetura@gmail.com";
+    public const string AdminSenha = "senha-somente-para-testes";
 
     public static async Task<HttpClient> ComoAdminAsync(HttpClient client)
     {
